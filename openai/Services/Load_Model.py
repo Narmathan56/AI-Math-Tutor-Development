@@ -9,7 +9,7 @@ def call_llama(prompt):
             "stream": False,
             "keep_alive": "10m",
             "num_predict": 200,
-            "temperature": 0.2
+            "temperature": 0.0
         }
     )
 

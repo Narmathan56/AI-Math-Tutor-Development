@@ -3,10 +3,12 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import re
+
 from dotenv import load_dotenv
 from google import genai
-from Services.ValidationChecker import validate_solution,normalize_math_input
+from Services.ValidationChecker import validate_solution,normalize_math_input,solve
 from Services.problemTypeDetector import detect_problem_type
+from Services.prompt_router import route_question
 from Services.Load_Model import call_llama
 import json
 
@@ -34,71 +36,64 @@ class Question(BaseModel):
 # PROMPT
 # =========================
 ARITHMETIC_PROMPT = """
-You are a mathematical reasoning engine that outputs STRICT JSON.
+You are a math solver.
 
-IMPORTANT:
-You must follow ALL rules exactly. No extra text allowed.
+Return JSON with:
+- steps
+- final_answer
 
------------------------
-TASK
------------------------
-Solve the given math problem and return:
-1. Step-by-step reasoning
-2. Final correct answer
+Rules:
+- Keep steps simple
+- Be mathematically correct
+- Include ALL solutions
+- JSON only
 
------------------------
-RULES
------------------------
-- Do NOT include any explanation outside JSON
-- Do NOT write any text before or after JSON
-- Do NOT modify the original equation structure
-- Do NOT skip any solutions (very important)
-- If ± appears, expand into separate values
-- Before moving to next step:
-   - ensure expression expands back to original equation exactly
-- Keep all steps logically correct and consistent
+case1: algebra / equations
+  - Use only algebraic transformations
+  - No new equations
+  - Final answer must match SymPy
+  - Do NOT use Greek letters
 
------------------------
-OUTPUT FORMAT (STRICT)
------------------------
-Return ONLY valid JSON:
+case2: statistics / probability
+  - You may use standard statistical symbols (σ, μ, θ, π)
+  - Use correct mathematical notation
+  - Do not invent symbols not defined in problem
+  - Final answer must match SymPy
+case3: geometry / trig  
+  - θ, π allowed
+  - Use standard math notation
+  - Keep steps logically consistent
 
+
+Example:
 {
-  "steps": [
-    {"text": "Step 1 explanation"},
-    {"text": "Step 2 explanation"}
-  ],
-  "final_answer": "complete answer"
-}
-
------------------------
-EXAMPLES
------------------------
-
-Arithmetic:
-Input: 2 + 3
-Output:
-{
-  "steps": [
-    {"text": "Add numbers 2 and 3"}
-  ],
-  "final_answer": "5"
-}
-
-Equation:
-Input: x^2 - 9 = 0
-Output:
-{
-  "steps": [
-    {"text": "x^2 = 9"},
-    {"text": "x = ±3"},
-    {"text": "Solutions: -3, 3"}
-  ],
+  "steps": [{"text": "x^2 = 9"}, {"text": "x = ±3"}],
   "final_answer": "-3, 3"
 }
 """
+def normalize_llm_output(data):
+    if not isinstance(data, dict):
+        return {
+            "steps": [],
+            "final_answer": ""
+        }
 
+    # case 1: step1/step2 format
+    if "step1" in data:
+        steps = []
+        i = 1
 
+        while f"step{i}" in data:
+            step = data[f"step{i}"]
+            steps.append({"text": step.get("solution", "")})
+            i += 1
+
+        return {
+            "steps": steps,
+            "final_answer": data.get("answer", "")
+        }
+
+    return data
 # =========================
 # 🔥 RESPONSE WRAPPER (IMPORTANT FIX)
 # =========================
@@ -111,28 +106,45 @@ def wrap_response(type_, model_used, data):
 
 # here we implemented the clean json file extraction function that can handle markdown and other text around the json
 def extract_json(text: str):
+    if not text:
+        return None
+
+    text = text.strip()
+
+    # remove markdown
+    text = text.replace("```json", "").replace("```", "").strip()
+
+    # try direct parse
     try:
-        text = text.strip()
-
-        # remove markdown if any
-        text = text.replace("```json", "").replace("```", "").strip()
-
-        # try direct parse first
         return json.loads(text)
-
     except:
         pass
 
-    # fallback: extract JSON block
+    # try to FIX common LLM issues
+    try:
+        # remove trailing commas
+        text = re.sub(r",\s*}", "}", text)
+        text = re.sub(r",\s*]", "]", text)
+
+        return json.loads(text)
+    except:
+        pass
+
+    # fallback: extract first JSON block
     match = re.search(r"\{[\s\S]*\}", text)
 
-    if match:
+    try:
+        return json.loads(match.group())
+    except json.JSONDecodeError:
+        # last resort cleanup
+        cleaned = match.group()
+        cleaned = re.sub(r",\s*}", "}", cleaned)
+        cleaned = re.sub(r",\s*]", "]", cleaned)
+
         try:
-            return json.loads(match.group())
+            return json.loads(cleaned)
         except:
             return None
-
-    return None
 
 # =========================
 # 🚀 MAIN ENDPOINT
@@ -164,29 +176,25 @@ async def solve_math(q: Question):
         # CLASSIFY INPUT
         # =====================
         problem_type = detect_problem_type(q.question)
+        route = route_question(q.question, problem_type)
 
         print("\n=== NEW REQUEST ===")
         print("Question:", q.question)
         print("Type:", problem_type)
 
-        # =====================
-        # CASE 1: MATH
-        # =====================
-        if problem_type in ["arithmetic", "equation"]:
-
-            clean_question = normalize_math_input(q.question)
-            prompt = ARITHMETIC_PROMPT + clean_question
-
-            llama_output = call_llama(prompt)
-            model_used = "llama"
-            print("RAW OUTPUT:\n", llama_output)
-            print("LLaMA executed")
+       
+    
+       
+        llama_output = call_llama(route["prompt"])
+        model_used = "llama"
+        print("RAW OUTPUT:\n", llama_output)
+        print("LLaMA executed")
             
 
             # ---------------------
             # SAFE JSON PARSE
             # ---------------------
-            try:
+        try:
                 cleaned_text = llama_output.strip()
 
                 if cleaned_text.startswith("```"):
@@ -194,11 +202,18 @@ async def solve_math(q: Question):
 
                 parsed_output = extract_json(cleaned_text)
                 if parsed_output is None:
-                   return wrap_response(
-                    "error",
-                    model_used,
-                    {"reason": "extract_json returned None (invalid model output)"}
-    )         
+                    parsed_output = {
+                    "steps": [],
+                    "final_answer": llama_output.strip()
+                   }
+
+                parsed_output = normalize_llm_output(parsed_output)
+                
+                if parsed_output is None:
+                  parsed_output = {
+                  "steps": [{"text": "Solution generated"}],
+                  "final_answer": llama_output.strip()
+    }
                 if not isinstance(parsed_output, dict):
                     return wrap_response(
                     "error",
@@ -208,7 +223,7 @@ async def solve_math(q: Question):
 
                 print("JSON valid")
 
-            except Exception as e:
+        except Exception as e:
                 print("JSON invalid:", e)
 
                 # fallback safe response (NEVER crash API)
@@ -223,9 +238,9 @@ async def solve_math(q: Question):
             # ---------------------
             # VALIDATION LAYER
             # ---------------------
-            validation_result = validate_solution(q.question, parsed_output)
+        validation_result = validate_solution(q.question, parsed_output)
 
-            if not validation_result["valid"]:
+        if not validation_result["valid"]:
                 return wrap_response(
                     "error",
                     model_used,
@@ -234,38 +249,14 @@ async def solve_math(q: Question):
                     }
                 )
 
-            return wrap_response(
+        return wrap_response(
                 "solution",
                 model_used,
                 parsed_output
             )
 
-        # =====================
-        # CASE 2: CHAT / CONCEPT
-        # =====================
-        else:
-
-            llama_prompt = f"""
-Rules:
-- Friendly AI tutor
-- Simple explanation
-- Keep answer short
-
-User: {q.question}
-"""
-
-            llama_output = call_llama(llama_prompt)
-            model_used = "llama"
-
-            print("LLaMA executed (chat)")
-
-            return wrap_response(
-                "chat",
-                model_used,
-                {
-                    "response": llama_output.strip()
-                }
-            )
+       
+        
 
     # =====================
     # GLOBAL ERROR SAFETY

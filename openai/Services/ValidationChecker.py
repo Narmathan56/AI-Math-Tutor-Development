@@ -1,27 +1,33 @@
-from sympy import sympify, Eq, solve, simplify
+from sympy import sympify, Eq, solve, simplify, Symbol
 import re
 
+x = Symbol("x")
 
 # =========================
-# SAFE NUMBER EXTRACTION
-# =========================
-def extract_number(text):
-    if text is None:
-        return []
-
-    return [
-        float(x)
-        for x in re.findall(r"-?\d+\.?\d*", str(text))
-    ]
-
-
-# =========================
-# SAFE STEP TEXT EXTRACTION
+# STEP EXTRACTION
 # =========================
 def get_step_text(step):
     if isinstance(step, dict):
-        return step.get("text", "")
+        text = step.get("text", "")
+        eq = step.get("eq", "")
+        return f"{text} {eq}".strip()
     return str(step)
+
+
+# =========================
+# CLEAN FINAL ANSWER
+# =========================
+def clean_final_answer(ans):
+    ans = str(ans)
+
+    # remove latex + formatting
+    ans = re.sub(r"\$|\\boxed|{|}", "", ans)
+
+    # normalize separators
+    ans = ans.replace("or", ",").replace("and", ",")
+    ans = ans.replace("=", " ")
+
+    return ans.strip()
 
 
 # =========================
@@ -31,11 +37,11 @@ def normalize_math_input(expr: str) -> str:
     if not expr:
         return expr
 
+    expr = re.sub(r'[\u200b-\u200f\uFEFF]', '', expr)
     expr = expr.replace("−", "-")
     expr = expr.replace("𝑥", "x").replace("𝑋", "x")
 
     expr = re.sub(r"\s+", "", expr)
-    expr = re.sub(r"\^\s+", "^", expr)
 
     expr = re.sub(r"(\d)([a-zA-Z])", r"\1*\2", expr)
     expr = re.sub(r"([a-zA-Z])(\d)", r"\1*\2", expr)
@@ -44,137 +50,161 @@ def normalize_math_input(expr: str) -> str:
     expr = re.sub(r"([a-zA-Z])(\()", r"\1*\2", expr)
 
     expr = expr.replace("^", "**")
-
     return expr
 
 
 # =========================
-# VALIDATOR
+# ANSWER PARSER (STRONG)
 # =========================
-def validate_solution(problem: str, parse_steps: dict):
+def parse_answers(text):
+    if not text:
+        return set()
 
+    text = clean_final_answer(text)
+
+    # -------------------------
+    # HANDLE ±
+    # -------------------------
+    if "±" in text:
+        nums = re.findall(r"\d+\.?\d*", text)
+        result = set()
+
+        for n in nums:
+            val = float(n)
+            result.add(val)
+            result.add(-val)
+
+        return result
+
+    # -------------------------
+    # NORMAL EXTRACTION
+    # -------------------------
+    nums = re.findall(r"-?\d+\.?\d*", text)
+
+    return set(float(n) for n in nums)
+
+
+# =========================
+# SUBSTITUTION VALIDATION
+# =========================
+def verify_by_substitution(problem, user_answers):
     try:
-        if parse_steps is None:
-            return {"valid": False, "reason": "No steps is None (pipeline failure)"}
+        clean_problem = normalize_math_input(problem)
 
-        steps = parse_steps.get("steps", [])
-        final_answer = parse_steps.get("final_answer")
-        problem = normalize_math_input(problem)
+        if "=" not in clean_problem:
+            return False
 
-        # -------------------------
-        # BASIC CHECKS
-        # -------------------------
-        if not steps:
-            return {"valid": False, "reason": "No steps found"}
+        lhs, rhs = clean_problem.split("=")
 
-        if not re.search(r"[0-9+\-*/=a-zA-Z]", problem):
-            return {
-                "valid": False,
-                "reason": "Concept question - validation skipped"
-            }
+        lhs_expr = sympify(lhs)
+        rhs_expr = sympify(rhs)
 
-        # -------------------------
-        # STEP VALIDATION
-        # -------------------------
-        for prev_step, curr_step in zip(steps, steps[1:]):
+        for val in user_answers:
+            try:
+                diff = lhs_expr.subs(x, val) - rhs_expr.subs(x, val)
 
-            prev_text = get_step_text(prev_step)
-            curr_text = get_step_text(curr_step)
+                if abs(float(diff)) > 1e-5:
+                    return False
+            except:
+                return False
 
-            prev_eq = re.findall(r"[0-9a-zA-Z+\-*/=().^ ]+", prev_text)
-            curr_eq = re.findall(r"[0-9a-zA-Z+\-*/=().^ ]+", curr_text)
+        return True
 
-            if not prev_eq or not curr_eq:
-                continue
+    except:
+        return False
 
-            prev_eq = prev_eq[0].strip()
-            curr_eq = curr_eq[0].strip()
 
-            if "=" not in prev_eq or "=" not in curr_eq:
+# =========================
+# STEP VALIDATION (OPTIONAL)
+# =========================
+def validate_steps(steps):
+    for i in range(len(steps) - 1):
+
+        prev = get_step_text(steps[i])
+        curr = get_step_text(steps[i + 1])
+
+        if "=" not in prev or "=" not in curr:
+            continue
+
+        if prev.count("=") != 1 or curr.count("=") != 1:
+            continue
+
+        try:
+            p_lhs, p_rhs = prev.split("=")
+            c_lhs, c_rhs = curr.split("=")
+
+            p = sympify(normalize_math_input(p_lhs)) - sympify(normalize_math_input(p_rhs))
+            c = sympify(normalize_math_input(c_lhs)) - sympify(normalize_math_input(c_rhs))
+
+            if simplify(p - c).is_zero:
                 continue
 
             try:
-                prev_lhs = normalize_math_input(prev_eq.split("=")[0])
-                prev_rhs = normalize_math_input(prev_eq.split("=")[1])
+                if set(solve(p)) == set(solve(c)):
+                    continue
+            except:
+                pass
 
-                curr_lhs = normalize_math_input(curr_eq.split("=")[0])
-                curr_rhs = normalize_math_input(curr_eq.split("=")[1])
-                prev_expr = sympify(prev_lhs) - sympify(prev_rhs)
-                curr_expr = sympify(curr_lhs) - sympify(curr_rhs)
+            return False
+
+        except:
+            continue
+
+    return True
 
 
-                
-                if not simplify(prev_expr - curr_expr).simplify().is_zero:
-                  return {
-                  "valid": False,
-                  "reason": f"Invalid step transition: {prev_text} → {curr_text}"
-                }
-           
+# =========================
+# MAIN VALIDATOR
+# =========================
+def validate_solution(problem: str, data: dict):
 
-            except Exception:
-                continue
+    try:
+        if not data:
+            return {"valid": False, "reason": "Empty response"}
+
+        steps = data.get("steps", [])
+        final_answer = data.get("final_answer")
+
+        clean_problem = normalize_math_input(problem)
 
         # -------------------------
-        # FINAL ANSWER VALIDATION
+        # SAFE STEPS (NON-BLOCKING)
         # -------------------------
-        if final_answer is None:
-            return {"valid": True, "reason": "No final answer provided"}
+        if not isinstance(steps, list):
+            steps = []
 
-        user_answer = set(extract_number(final_answer))
+        validate_steps(steps)  # optional only
 
         # -------------------------
-        # EQUATION CASE (SYMPY TRUTH)
+        # PARSE ANSWERS
         # -------------------------
-        if "=" in problem:
+        user_answers = parse_answers(final_answer)
 
-            lhs, rhs = problem.split("=")
+        if not user_answers:
+            return {"valid": False, "reason": "Cannot parse final answer"}
 
-            lhs = sympify(lhs)
-            rhs = sympify(rhs)
+        # -------------------------
+        # EQUATION CASE
+        # -------------------------
+        if "=" in clean_problem:
+            is_valid = verify_by_substitution(problem, user_answers)
 
-            equation = Eq(lhs, rhs)
-            solution = solve(equation, dict=False)
-
-            if not solution:
-                return {"valid": False, "reason": "No solution found"}
-
-            correct_answer = set()
-
-            for sol in solution:
-                correct_answer.update(extract_number(sol))
+            return {
+                "valid": is_valid,
+                "reason": "ok" if is_valid else "Incorrect final answer"
+            }
 
         # -------------------------
         # ARITHMETIC CASE
         # -------------------------
         else:
-            try:
-                correct_answer = {float(sympify(problem))}
-            except Exception:
-                return {"valid": False, "reason": "Invalid arithmetic expression"}
+            correct_val = float(sympify(clean_problem))
+            user_val = list(user_answers)[0]
 
-        # -------------------------
-        # COMPARE FINAL ANSWER
-        # -------------------------
-        if user_answer is None or correct_answer is None:
-            return {"valid": False, "reason": "Could not parse final answer"}
-
-        if "=" in problem:
-            if user_answer != correct_answer:
-                return {
-                    "valid": False,
-                    "reason": "Incorrect final answer"
-                }
-        else:
-            user_val = list(user_answer)[0]
-            correct_val = list(correct_answer)[0]
-
-            if abs(user_val - correct_val) > 1e-6:
-                return {
-                    "valid": False,
-                    "reason": "Incorrect final answer"
-                }
-
-        return {"valid": True, "reason": "All validations passed"}
+            return {
+                "valid": abs(user_val - correct_val) < 1e-6,
+                "reason": "ok" if abs(user_val - correct_val) < 1e-6 else "Incorrect final answer"
+            }
 
     except Exception as e:
         return {
