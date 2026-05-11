@@ -13,6 +13,40 @@ def get_step_text(step):
         return f"{text} {eq}".strip()
     return str(step)
 
+def validate_transition(before_eq, after_eq):
+    try:
+        if "=" not in before_eq or "=" not in after_eq:
+            return False
+
+        b_lhs, b_rhs = before_eq.split("=")
+        a_lhs, a_rhs = after_eq.split("=")
+
+        before_expr = (
+            sympify(normalize_math_input(b_lhs))
+            - sympify(normalize_math_input(b_rhs))
+        )
+
+        after_expr = (
+            sympify(normalize_math_input(a_lhs))
+            - sympify(normalize_math_input(a_rhs))
+        )
+
+        # EXACT algebra equivalence
+        if simplify(before_expr - after_expr).is_zero:
+            return True
+
+        # SAME SOLUTION SET
+        try:
+            if set(solve(before_expr)) == set(solve(after_expr)):
+                return True
+        except:
+            pass
+
+        return False
+
+    except:
+        return False    
+
 
 # =========================
 # CLEAN FINAL ANSWER
@@ -117,42 +151,24 @@ def verify_by_substitution(problem, user_answers):
 # =========================
 # STEP VALIDATION (OPTIONAL)
 # =========================
+
 def validate_steps(steps):
-    for i in range(len(steps) - 1):
 
-        prev = get_step_text(steps[i])
-        curr = get_step_text(steps[i + 1])
+    results = []
 
-        if "=" not in prev or "=" not in curr:
-            continue
+    for step in steps:
 
-        if prev.count("=") != 1 or curr.count("=") != 1:
-            continue
+        before_eq = step.get("before", "")
+        after_eq = step.get("after", "")
 
-        try:
-            p_lhs, p_rhs = prev.split("=")
-            c_lhs, c_rhs = curr.split("=")
+        valid = validate_transition(before_eq, after_eq)
 
-            p = sympify(normalize_math_input(p_lhs)) - sympify(normalize_math_input(p_rhs))
-            c = sympify(normalize_math_input(c_lhs)) - sympify(normalize_math_input(c_rhs))
+        results.append({
+            "step_id": step.get("id"),
+            "valid": valid
+        })
 
-            if simplify(p - c).is_zero:
-                continue
-
-            try:
-                if set(solve(p)) == set(solve(c)):
-                    continue
-            except:
-                pass
-
-            return False
-
-        except:
-            continue
-
-    return True
-
-
+    return results
 # =========================
 # MAIN VALIDATOR
 # =========================
