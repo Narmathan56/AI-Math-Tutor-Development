@@ -13,6 +13,51 @@ def get_step_text(step):
         return f"{text} {eq}".strip()
     return str(step)
 
+def compute_ground_truth(question: str):
+    try:
+        question = normalize_math_input(question)
+
+        # EQUATION CASE
+        if "=" in question:
+            lhs, rhs = question.split("=")
+
+            lhs_expr = sympify(lhs)
+            rhs_expr = sympify(rhs)
+
+            sol = solve(Eq(lhs_expr, rhs_expr), x)
+
+            return {
+                "type": "equation",
+                "answer": sol
+            }
+
+        # ARITHMETIC CASE
+        expr = sympify(question)
+        return {
+            "type": "arithmetic",
+            "answer": float(expr)
+        }
+
+    except Exception as e:
+        print("SYMPY ERROR:", e)
+        return None
+    
+def normalize_answer(ans):
+    if isinstance(ans, list):
+        return sorted([float(x) for x in ans])
+
+    if isinstance(ans, str):
+        import re
+        nums = re.findall(r"-?\d+\.?\d*", ans)
+        return sorted([float(n) for n in nums])
+
+    return []    
+
+def compare_answers(user, truth):
+    user_norm = normalize_answer(user)
+    truth_norm = normalize_answer(truth)
+    return set(user_norm) == set(truth_norm)
+
 def validate_transition(before_eq, after_eq):
     try:
         if "=" not in before_eq or "=" not in after_eq:

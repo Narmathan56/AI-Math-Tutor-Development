@@ -1,31 +1,51 @@
 import requests
 
 def call_llama(prompt):
-    response = requests.post(
-        "http://localhost:11434/api/generate",
-        json={
-            "model": "llama3.2",
-            "prompt": prompt,
-            "stream": False,
-            "keep_alive": "10m",
-            "num_predict": 200,
-            "temperature": 0.0
-        }
-    )
+    try:
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3.2",
+                "prompt": prompt,
+                "stream": False,
+                "keep_alive": "10m",
+                "num_predict": 300,
+                "temperature": 0.0,
+                "top_p": 1.0,
+                "repeat_penalty": 1.0
+            },
+            timeout=180
+        )
 
-    data = response.json()
-    raw = data.get("response", "")
+        # ❌ HTTP check
+        if response.status_code != 200:
+            print("❌ HTTP ERROR:", response.status_code)
+            print(response.text)
+            return None
 
-    # 🔥 HARD CLEAN
-    raw = raw.strip()
+        # ❌ JSON safe parse
+        try:
+            data = response.json()
+        except Exception as e:
+            print("❌ JSON ERROR:", e)
+            print(response.text)
+            return None
 
-    # remove accidental debug artifacts
-    raw = raw.replace("LLaMA executed", "")
-    raw = raw.replace("```json", "").replace("```", "")
+        raw = data.get("response", "")
 
-    return raw.strip()
+        # ❌ empty check
+        if not raw or not raw.strip():
+            print("❌ EMPTY RESPONSE FROM MODEL")
+            print("FULL DATA:", data)
+            return None
 
+        # 🔥 CLEANING
+        raw = raw.strip()
+        raw = raw.replace("LLaMA executed", "")
+        raw = raw.replace("```json", "").replace("```", "")
 
-# test
-if __name__ == "__main__":
-    print(call_llama("Solve x^2 + 5x + 6 = 0 step by step"))
+        return raw.strip()
+
+    except Exception as e:
+        print("🔥 REQUEST FAILED:", str(e))
+        return None
