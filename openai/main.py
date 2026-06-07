@@ -9,10 +9,11 @@ import time
 
 from dotenv import load_dotenv
 from google import genai
-from Services.ValidationChecker import validate_solution,normalize_math_input,solve,compute_ground_truth,compare_answers
-from Services.problemTypeDetector import detect_problem_type
+from Services.ValidationChecker import validate_solution,normalize_math_input,solve,compute_ground_truth,compare_answers, parse_answers, validate_transition
+from Services.problemTypeDetector import classify
 from Services.prompt_router import get_system_prompt
 from Services.Load_Model import call_llama
+from functools import lru_cache
 import json
 
 load_dotenv()
@@ -116,6 +117,21 @@ def parse_step_output(text):
         "steps": steps,
         "final_answer": final_answer
     }
+@lru_cache(maxsize=1000)
+def cached_ground_truth(question: str):
+    return compute_ground_truth(question)
+
+def extract_final_line(text):
+
+    lines = text.strip().splitlines()
+
+    # check from bottom upwards
+    for line in reversed(lines):
+
+        if "x =" in line.lower():
+            return line
+
+    return text
 def normalize_llm_output(data):
     if not isinstance(data, dict):
         return {
@@ -225,10 +241,11 @@ async def solve_math(q: Question):
         # =====================
         # CLASSIFY INPUT
         # =====================
-        problem_type = detect_problem_type(q.question)
+        problem_type = classify(q.question.lower())
         clean_question = normalize_math_input(q.question)
+        print("Normalized Question:", clean_question)
 
-        truth = compute_ground_truth(clean_question)
+        truth = cached_ground_truth(clean_question)
 
         if truth is None:
             return wrap_response("error", "system", {"reason": "Cannot compute truth"})
@@ -253,7 +270,16 @@ async def solve_math(q: Question):
 
         parsed_output = parse_step_output(llama_output)
 
-        if not parsed_output:
+        # fallback answer extraction
+        if not parsed_output["final_answer"]:
+            final_line = extract_final_line(llama_output)
+
+            extracted_answers = parse_answers(final_line)
+
+            parsed_output["final_answer"] = list(extracted_answers)
+
+        ## safty fall back
+        if not parsed_output["steps"] and not parsed_output["final_answer"]:
            parsed_output = {
             "steps": [],
             "final_answer": llama_output
@@ -263,15 +289,24 @@ async def solve_math(q: Question):
 # ACCURACY CHECK (IMPORTANT FIX)
 # =========================
 
-        user_answer = str(parsed_output.get("final_answer", "")).strip()
-        correct_answer = str(truth["answer"]).strip()
 
         validation_result = validate_solution(
         problem=q.question,
-        data=parsed_output
+        data=parsed_output,
+        truth=truth
         )
 
         is_correct = validation_result["valid"]
+        if not validation_result["valid"]:
+            return wrap_response(
+            "error",
+            model_used,
+           {
+            "reason": validation_result["reason"],
+            "expected": truth["answer"],
+            "got": parsed_output.get("final_answer")
+           }
+         )
 
         response_time = round(time.time() - start_time, 2)
 
@@ -292,15 +327,15 @@ async def solve_math(q: Question):
         print("=============================\n")
 
         if not is_correct:
-          return wrap_response(
-        "error",
-        model_used,
-        {
-            "reason": "Final answer mismatch",
-            "expected": correct_answer,
-            "got": user_answer
-        }
-    )
+            return wrap_response(
+            "error",
+            model_used,
+           {
+            "reason": validation_result["reason"],
+            "expected": truth["answer"],
+            "got": parsed_output.get("final_answer")
+          }
+         )
 
         return wrap_response(
     "solution",

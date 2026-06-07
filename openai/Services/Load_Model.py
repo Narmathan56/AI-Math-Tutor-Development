@@ -9,12 +9,12 @@ def call_llama(prompt):
                 "prompt": prompt,
                 "stream": False,
                 "keep_alive": "10m",
-                "num_predict": 300,
+                "num_predict": 120,
                 "temperature": 0.0,
                 "top_p": 1.0,
                 "repeat_penalty": 1.0
             },
-            timeout=180
+            timeout=240
         )
 
         # ❌ HTTP check

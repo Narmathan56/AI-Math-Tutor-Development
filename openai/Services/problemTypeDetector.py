@@ -1,71 +1,33 @@
 import re
+def classify(q: str) -> str:
 
-def detect_problem_type(question: str) -> str:
-    """
-    Returns:
-        - "equation"
-        - "arithmetic"
-        - "algebra"
-        - "trigonometry"
-        - "calculus"
-        - "concept"
-    """
-
-    if not question:
-        return "concept"
-
-    q = question.strip().lower()
-
-    # =========================
-    # 1. EQUATION CHECK (highest priority)
-    # =========================
-    if "=" in q:
-        return "equation"
-
-    # =========================
-    # 2. CALCULUS DETECTION
-    # =========================
-    calculus_keywords = [
+    # 1. CALCULUS (highest complexity priority)
+    if any(k in q for k in [
         "derivative", "differentiate", "integrate",
-        "integration", "limit", "dy/dx", "d/dx"
-    ]
-
-    if any(word in q for word in calculus_keywords):
+        "integration", "limit", "d/dx", "dy/dx"
+    ]):
         return "calculus"
 
-    # =========================
-    # 3. TRIGONOMETRY DETECTION
-    # =========================
-    trig_keywords = [
-        "sin", "cos", "tan", "cot", "sec", "csc",
-        "trig", "trigonometry"
-    ]
+    # 2. LOGARITHMS
+    if "log" in q:
+        return "log"
 
-    if any(word in q for word in trig_keywords):
+    # 3. TRIGONOMETRY
+    if any(k in q for k in ["sin", "cos", "tan", "cot", "sec", "csc"]):
         return "trigonometry"
 
-    # =========================
-    # 4. PURE ARITHMETIC CHECK
-    # =========================
-    arithmetic_pattern = r"^[0-9\s+\-*/().^]+$"
-
-    if re.search(arithmetic_pattern, q):
+    # 4. EQUATION / POLYNOMIAL (structure-based detection > symbols)
+    if "=" in q:
+        if any(c.isalpha() for c in q):
+            return "polynomial"
         return "arithmetic"
 
-    # =========================
-    # 5. ALGEBRA DETECTION
-    # =========================
-    algebra_patterns = [
-        r"[a-zA-Z].*\d",   # x2, a3 etc
-        r"\bsolve\b",
-        r"\bfactor\b",
-        r"\bsimplify\b"
-    ]
+    # 5. ALGEBRA keywords
+    if any(k in q for k in ["solve", "factor", "simplify"]):
+        return "polynomial"
 
-    if any(re.search(p, q) for p in algebra_patterns):
-        return "algebra"
+    # 6. PURE ARITHMETIC
+    if re.fullmatch(r"[0-9\s+\-*/().^]+", q):
+        return "arithmetic"
 
-    # =========================
-    # 6. DEFAULT
-    # =========================
     return "concept"

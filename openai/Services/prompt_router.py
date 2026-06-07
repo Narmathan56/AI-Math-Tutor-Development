@@ -1,38 +1,129 @@
 
+from Services.problemTypeDetector import classify
 def get_system_prompt(problem_type: str, question: str, truth: dict):
 
-    answer = str(truth["answer"])
+    if problem_type == "log":
+        return log_prompt(question, truth)
 
-    prompt = f"""
-You are a math tutor.
+    if problem_type == "trigonometry":
+        return trig_prompt(question, truth)
+
+    if problem_type == "polynomial":
+        return polynomial_prompt(question, truth)
+
+
+    return general_equation_prompt(question, truth)
+
+
+def log_prompt(question, truth):
+
+       return {
+        "prompt": f"""
+You are a logarithm equation solver.
 
 Problem:
 {question}
 
 Verified Answer:
-{answer}
-
-Explain step-by-step like a teacher.
+{truth["answer"]}
 
 RULES:
-- No JSON
-- No code
-- generate mathematical equations only
-- steps must match between question and answer
-- No final answer block
-- Just clean step-by-step explanation
-- Use simple language
-- One step per line
-- format:
-   step 1: ...
-   step 2: ...
+- Convert logs → exponential form ONLY when needed
+- Use correct base conversion
+- Always enforce domain: argument > 0
+- One transformation per step
+- No explanations
+- JSON only
 
+OUTPUT FORMAT:
+{{
+  "steps": [{{"text": "...", "expression": "..."}}],
+  "final_answer": []
+}}
 
-Think like you're writing on a whiteboard for a student.
+FINAL RULE:
+final_answer must match SymPy exactly
 """
+    }
+
+
+def trig_prompt(question, truth):
 
     return {
-        "prompt": prompt,
-        "use_sympy": True,
-        "type": problem_type
+        "prompt": f"""
+You are a trigonometry equation solver.
+
+Problem:
+{question}
+
+Verified Answer:
+{truth["answer"]}
+
+RULES:
+- Use identities only if required
+- Keep transformations algebraic
+- No narrative text
+- JSON only
+
+Allowed identities:
+- sin^2 + cos^2 = 1
+- tan = sin/cos
+- angle solutions in [0, 2π] if needed
+
+OUTPUT:
+{{
+  "steps": [{{"text": "...", "expression": "..."}}],
+  "final_answer": []
+}}
+"""
+    }
+
+
+def polynomial_prompt(question, truth):
+
+    return {
+        "prompt": f"""
+You are a polynomial equation solver.
+
+Problem:
+{question}
+
+Verified Answer:
+{truth["answer"]}
+
+RULES:
+- Factorization preferred
+- Substitution allowed (x^2 = y)
+- One algebra step per line
+- Strict JSON only
+
+OUTPUT:
+{{
+  "steps": [{{"text": "...", "expression": "..."}}],
+  "final_answer": []
+}}
+"""
+    }
+
+def general_equation_prompt(question, truth):
+
+    return {
+        "prompt": f"""
+You are a general equation solver.
+
+Problem:
+{question}
+
+Verified Answer:
+{truth["answer"]}
+
+RULES:
+- strict JSON only
+
+OUTPUT:
+{{
+  "steps": [{{"text": "...", "expression": "..."}}],
+  "final_answer": []
+}}
+"""
     }

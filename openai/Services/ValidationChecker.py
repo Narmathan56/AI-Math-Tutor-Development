@@ -1,3 +1,5 @@
+
+
 from sympy import sympify, Eq, solve, simplify, Symbol
 import re
 
@@ -25,6 +27,7 @@ def compute_ground_truth(question: str):
             rhs_expr = sympify(rhs)
 
             sol = solve(Eq(lhs_expr, rhs_expr), x)
+            sol = [float(s.evalf()) for s in sol]
 
             return {
                 "type": "equation",
@@ -112,26 +115,69 @@ def clean_final_answer(ans):
 # =========================
 # NORMALIZE INPUT
 # =========================
+import re
+
+SAFE_FUNCS = ["log", "sin", "cos", "tan", "ln", "sqrt"]
+
 def normalize_math_input(expr: str) -> str:
     if not expr:
         return expr
 
+    # -------------------------
+    # CLEAN UNICODE ISSUES
+    # -------------------------
     expr = re.sub(r'[\u200b-\u200f\uFEFF]', '', expr)
     expr = expr.replace("−", "-")
     expr = expr.replace("𝑥", "x").replace("𝑋", "x")
 
+    # remove spaces
     expr = re.sub(r"\s+", "", expr)
 
+    # -------------------------
+    # HANDLE log base notation
+    # log3(x) -> log(x,3)
+    # -------------------------
+    expr = re.sub(
+        r'log(\d+)\((.*?)\)',
+        r'log(\2,\1)',
+        expr
+    )
+
+    # -------------------------
+    # PROTECT FUNCTIONS (VERY IMPORTANT)
+    # prevents log( becoming log*(
+    # -------------------------
+    for f in SAFE_FUNCS:
+        expr = expr.replace(f, f"__{f}__")
+
+    # -------------------------
+    # IMPLICIT MULTIPLICATION RULES
+    # -------------------------
+
+    # 2x -> 2*x
     expr = re.sub(r"(\d)([a-zA-Z])", r"\1*\2", expr)
+
+    # x2 -> x*2
     expr = re.sub(r"([a-zA-Z])(\d)", r"\1*\2", expr)
+
+    # )( -> )*(
     expr = re.sub(r"(\))(\()", r"\1*\2", expr)
+
+    # 2( -> 2*(
     expr = re.sub(r"(\d)(\()", r"\1*\2", expr)
-    expr = re.sub(r"([a-zA-Z])(\()", r"\1*\2", expr)
 
+    # -------------------------
+    # RESTORE FUNCTIONS
+    # -------------------------
+    for f in SAFE_FUNCS:
+        expr = expr.replace(f"__{f}__", f)
+
+    # -------------------------
+    # EXPONENT FIX
+    # -------------------------
     expr = expr.replace("^", "**")
+
     return expr
-
-
 # =========================
 # ANSWER PARSER (STRONG)
 # =========================
@@ -154,6 +200,7 @@ def parse_answers(text):
             result.add(-val)
 
         return result
+    
 
     # -------------------------
     # NORMAL EXTRACTION
@@ -217,8 +264,7 @@ def validate_steps(steps):
 # =========================
 # MAIN VALIDATOR
 # =========================
-def validate_solution(problem: str, data: dict):
-
+def validate_solution(problem: str, data: dict, truth: dict):
     try:
         if not data:
             return {"valid": False, "reason": "Empty response"}
@@ -226,46 +272,43 @@ def validate_solution(problem: str, data: dict):
         steps = data.get("steps", [])
         final_answer = data.get("final_answer")
 
-        clean_problem = normalize_math_input(problem)
-
-        # -------------------------
-        # SAFE STEPS (NON-BLOCKING)
-        # -------------------------
         if not isinstance(steps, list):
             steps = []
 
-        validate_steps(steps)  # optional only
+        validate_steps(steps)
 
-        # -------------------------
-        # PARSE ANSWERS
-        # -------------------------
-        user_answers = parse_answers(final_answer)
+        clean_problem = normalize_math_input(problem)
 
-        if not user_answers:
-            return {"valid": False, "reason": "Cannot parse final answer"}
+        user_answers = normalize_answer(final_answer)
+        truth_answers = normalize_answer(truth["answer"])
 
         # -------------------------
         # EQUATION CASE
         # -------------------------
         if "=" in clean_problem:
-            is_valid = verify_by_substitution(problem, user_answers)
-
             return {
-                "valid": is_valid,
-                "reason": "ok" if is_valid else "Incorrect final answer"
+                "valid": set(user_answers) == set(truth_answers),
+                "reason": "ok"
             }
 
         # -------------------------
         # ARITHMETIC CASE
         # -------------------------
-        else:
-            correct_val = float(sympify(clean_problem))
-            user_val = list(user_answers)[0]
+        if not user_answers:
+            return {"valid": False, "reason": "Cannot parse final answer"}
 
-            return {
-                "valid": abs(user_val - correct_val) < 1e-6,
-                "reason": "ok" if abs(user_val - correct_val) < 1e-6 else "Incorrect final answer"
-            }
+        expr = sympify(clean_problem)
+
+        if expr.free_symbols:
+            return {"valid": False, "reason": "Not arithmetic"}
+
+        correct_val = float(expr.evalf())
+        user_val = list(user_answers)[0]
+
+        return {
+            "valid": abs(user_val - correct_val) < 1e-6,
+            "reason": "ok"
+        }
 
     except Exception as e:
         return {
