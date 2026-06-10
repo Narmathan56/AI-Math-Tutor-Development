@@ -27,12 +27,20 @@ def compute_ground_truth(question: str):
             rhs_expr = sympify(rhs)
 
             sol = solve(Eq(lhs_expr, rhs_expr), x)
-            sol = [float(s.evalf()) for s in sol]
+
+            cleaned = []
+            for s in sol:
+              try:
+                cleaned.append(float(s.evalf()))
+              except:
+                cleaned.append(str(s))  # keep symbolic fallback
 
             return {
-                "type": "equation",
-                "answer": sol
-            }
+             "type": "equation",
+             "answer": cleaned
+       }
+
+            
 
         # ARITHMETIC CASE
         expr = sympify(question)
@@ -153,12 +161,13 @@ def normalize_math_input(expr: str) -> str:
     # -------------------------
     # IMPLICIT MULTIPLICATION RULES
     # -------------------------
+    # convert x3, x2, x10 → x^3, x^2, x^10
+    expr = re.sub(r"([a-zA-Z])(\d+)", r"\1^\2", expr)
 
     # 2x -> 2*x
     expr = re.sub(r"(\d)([a-zA-Z])", r"\1*\2", expr)
 
-    # x2 -> x*2
-    expr = re.sub(r"([a-zA-Z])(\d)", r"\1*\2", expr)
+    
 
     # )( -> )*(
     expr = re.sub(r"(\))(\()", r"\1*\2", expr)
@@ -269,13 +278,16 @@ def validate_solution(problem: str, data: dict, truth: dict):
         if not data:
             return {"valid": False, "reason": "Empty response"}
 
-        steps = data.get("steps", [])
+        steps = data.get("steps") or data.get("result", {}).get("steps", [])
+        if not isinstance(steps, list):
+          steps = []
         final_answer = data.get("final_answer")
 
         if not isinstance(steps, list):
             steps = []
 
-        validate_steps(steps)
+        step_results=validate_steps(steps)
+        print("STEP VALIDATION:", step_results)
 
         clean_problem = normalize_math_input(problem)
 

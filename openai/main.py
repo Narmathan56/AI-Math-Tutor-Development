@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from google import genai
 from Services.ValidationChecker import validate_solution,normalize_math_input,solve,compute_ground_truth,compare_answers, parse_answers, validate_transition
 from Services.problemTypeDetector import classify
-from Services.prompt_router import get_system_prompt
+from Services.prompt_router import build_prompt
 from Services.Load_Model import call_llama
 from functools import lru_cache
 import json
@@ -44,45 +44,7 @@ class Question(BaseModel):
     question: str
 
 
-# =========================
-# PROMPT
-# =========================
-ARITHMETIC_PROMPT = """
-You are a math solver.
 
-Return JSON with:
-- steps
-- final_answer
-
-Rules:
-- Keep steps simple
-- Be mathematically correct
-- Include ALL solutions
-- JSON only
-
-case1: algebra / equations
-  - Use only algebraic transformations
-  - No new equations
-  - Final answer must match SymPy
-  - Do NOT use Greek letters
-
-case2: statistics / probability
-  - You may use standard statistical symbols (σ, μ, θ, π)
-  - Use correct mathematical notation
-  - Do not invent symbols not defined in problem
-  - Final answer must match SymPy
-case3: geometry / trig  
-  - θ, π allowed
-  - Use standard math notation
-  - Keep steps logically consistent
-
-
-Example:
-{
-  "steps": [{"text": "x^2 = 9"}, {"text": "x = ±3"}],
-  "final_answer": "-3, 3"
-}
-"""
 
 def parse_step_output(text):
 
@@ -117,10 +79,16 @@ def parse_step_output(text):
         "steps": steps,
         "final_answer": final_answer
     }
-@lru_cache(maxsize=1000)
 def cached_ground_truth(question: str):
-    return compute_ground_truth(question)
+    result = compute_ground_truth(question)
 
+    if not isinstance(result, dict):
+        return None
+
+    if "answer" not in result:
+        return None
+
+    return result
 def extract_final_line(text):
 
     lines = text.strip().splitlines()
@@ -133,28 +101,63 @@ def extract_final_line(text):
 
     return text
 def normalize_llm_output(data):
-    if not isinstance(data, dict):
-        return {
-            "steps": [],
-            "final_answer": ""
-        }
 
-    # case 1: step1/step2 format
+    # -------------------------
+    # HARD CONTRACT DEFAULT
+    # -------------------------
+    normalized = {
+        "steps": [],
+        "final_answer": []
+    }
+
+    # -------------------------
+    # INVALID TYPE
+    # -------------------------
+    if not isinstance(data, dict):
+        return normalized
+
+    # -------------------------
+    # FORMAT: {step1, step2, answer}
+    # -------------------------
     if "step1" in data:
+
         steps = []
         i = 1
 
         while f"step{i}" in data:
             step = data[f"step{i}"]
-            steps.append({"text": step.get("solution", "")})
+
+            if isinstance(step, dict):
+                steps.append({
+                    "text": step.get("solution", "")
+                })
+
             i += 1
 
-        return {
-            "steps": steps,
-            "final_answer": data.get("answer", "")
-        }
+        normalized["steps"] = steps
+        normalized["final_answer"] = data.get("answer", [])
 
-    return data
+        return normalized
+
+    # -------------------------
+    # FORMAT: standard schema
+    # -------------------------
+    if "steps" in data:
+        normalized["steps"] = data.get("steps", [])
+
+    if "final_answer" in data:
+        normalized["final_answer"] = data.get("final_answer", [])
+
+    # -------------------------
+    # FALLBACKS
+    # -------------------------
+    elif "answer" in data:
+        normalized["final_answer"] = data["answer"]
+
+    elif "verified_answer" in data:
+        normalized["final_answer"] = data["verified_answer"]
+
+    return normalized
 # =========================
 # 🔥 RESPONSE WRAPPER (IMPORTANT FIX)
 # =========================
@@ -242,19 +245,31 @@ async def solve_math(q: Question):
         # CLASSIFY INPUT
         # =====================
         problem_type = classify(q.question.lower())
+        print("Classified Problem Type:", problem_type)
         clean_question = normalize_math_input(q.question)
         print("Normalized Question:", clean_question)
+        print("Classified Problem Type:", problem_type)
 
         truth = cached_ground_truth(clean_question)
-
-        if truth is None:
-            return wrap_response("error", "system", {"reason": "Cannot compute truth"})
-
-        route = get_system_prompt(problem_type, q.question, truth)
+        if truth is None or not isinstance(truth, dict) or "answer" not in truth:
+          return wrap_response("error", "system", {
+          "reason": "Invalid truth",
+          "truth": str(truth)
+    })
+        
+        print("DEBUG truth type:", type(truth))
+        print("DEBUG truth value:", truth)
+        
+        if not isinstance(truth, dict):
+            raise ValueError(f"Invalid truth type: {type(truth)}")
+        route = build_prompt(problem_type, q.question, truth)
+        print("pass", flush=True)
 
         TOTAL_REQUESTS += 1
+        print("step 2 reached", flush=True)
 
-        llama_output = call_llama(route["prompt"])
+        llama_output = call_llama(route)
+        print("step 3 reached", flush=True)
         if not llama_output or llama_output.strip() == "":
           return wrap_response(
         "error",
@@ -262,28 +277,42 @@ async def solve_math(q: Question):
         {"reason": "LLM returned empty response"}
     )
         model_used = "llama"
-
+        print("step reached", flush=True)
+        
         print("\n=== NEW REQUEST ===")
         print("Question:", q.question)
         print("Truth:", truth)
-        print("RAW OUTPUT:", llama_output)
+        print("RAW OUTPUT:", llama_output, flush = True)
+       
 
-        parsed_output = parse_step_output(llama_output)
+        json_data = extract_json(llama_output)
+        print("DEBUG json_data type:", type(json_data))
+        print("DEBUG json_data value:", json_data)
+
+        if json_data:
+          parsed_output = normalize_llm_output(json_data)
+        else:
+          parsed_output = parse_step_output(llama_output)
+
+        
 
         # fallback answer extraction
-        if not parsed_output["final_answer"]:
-            final_line = extract_final_line(llama_output)
-
-            extracted_answers = parse_answers(final_line)
-
-            parsed_output["final_answer"] = list(extracted_answers)
-
+        # fallback answer extraction
+        if not parsed_output.get("final_answer"):
+           final_line = extract_final_line(llama_output)
+           extracted_answers = parse_answers(final_line)
+           parsed_output["final_answer"] = list(extracted_answers)
         ## safty fall back
         if not parsed_output["steps"] and not parsed_output["final_answer"]:
            parsed_output = {
             "steps": [],
             "final_answer": llama_output
          }
+        if truth is None or not isinstance(truth, dict) or "answer" not in truth:
+          return wrap_response("error", "system", {
+          "reason": "Invalid truth",
+          "truth": str(truth)
+    })
 
 # =========================
 # ACCURACY CHECK (IMPORTANT FIX)

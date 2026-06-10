@@ -1,6 +1,6 @@
 import requests
 
-def call_llama(prompt):
+def call_llama(prompt: str) -> str:
     try:
         response = requests.post(
             "http://localhost:11434/api/generate",
@@ -17,35 +17,46 @@ def call_llama(prompt):
             timeout=240
         )
 
-        # ❌ HTTP check
+        # -------------------
+        # HTTP CHECK
+        # -------------------
         if response.status_code != 200:
             print("❌ HTTP ERROR:", response.status_code)
             print(response.text)
-            return None
+            return ""
 
-        # ❌ JSON safe parse
+        # -------------------
+        # JSON PARSE SAFE
+        # -------------------
         try:
             data = response.json()
         except Exception as e:
             print("❌ JSON ERROR:", e)
             print(response.text)
-            return None
+            return ""
 
+        # -------------------
+        # EXTRACT RESPONSE
+        # -------------------
         raw = data.get("response", "")
 
-        # ❌ empty check
-        if not raw or not raw.strip():
+        if not isinstance(raw, str):
+            raw = str(raw)
+
+        if not raw.strip():
             print("❌ EMPTY RESPONSE FROM MODEL")
             print("FULL DATA:", data)
-            return None
+            return ""
 
-        # 🔥 CLEANING
+        # -------------------
+        # CLEAN OUTPUT
+        # -------------------
         raw = raw.strip()
-        raw = raw.replace("LLaMA executed", "")
         raw = raw.replace("```json", "").replace("```", "")
+        raw = raw.replace("LLaMA executed", "")
 
         return raw.strip()
 
     except Exception as e:
         print("🔥 REQUEST FAILED:", str(e))
-        return None
+        return ""

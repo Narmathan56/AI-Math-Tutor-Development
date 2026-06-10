@@ -1,129 +1,71 @@
+BASE_SYSTEM_PROMPT = """
+You are a deterministic math engine.
 
-from Services.problemTypeDetector import classify
-def get_system_prompt(problem_type: str, question: str, truth: dict):
-
-    if problem_type == "log":
-        return log_prompt(question, truth)
-
-    if problem_type == "trigonometry":
-        return trig_prompt(question, truth)
-
-    if problem_type == "polynomial":
-        return polynomial_prompt(question, truth)
-
-
-    return general_equation_prompt(question, truth)
-
-
-def log_prompt(question, truth):
-
-       return {
-        "prompt": f"""
-You are a logarithm equation solver.
-
-Problem:
-{question}
-
-Verified Answer:
-{truth["answer"]}
+You will receive:
+- problem_type
+- question
+- verified_answer
 
 RULES:
-- Convert logs → exponential form ONLY when needed
-- Use correct base conversion
-- Always enforce domain: argument > 0
-- One transformation per step
+- Always output ONLY valid JSON
 - No explanations
-- JSON only
+- No code
+- No markdown
+- No extra keys
 
-OUTPUT FORMAT:
-{{
-  "steps": [{{"text": "...", "expression": "..."}}],
-  "final_answer": []
-}}
+IMPORTANT:
+You MUST return this EXACT JSON structure.
 
-FINAL RULE:
-final_answer must match SymPy exactly
+DO NOT change key names.
+
+DO NOT omit steps.
+
+VALID FORMAT:
+
+{
+"steps": [
+{
+"text": "Factor equation",
+"expression": "(x^2-1)(x^2-9)=0"
+},
+{
+"text": "Solve factors",
+"expression": "x=±1, ±3"
+}
+],
+"final_answer": [-3, -1, 1, 3]
+}
+
+INVALID:
+{
+"solution": "...",
+"algorithm": "..."
+}
+
+INVALID:
+{
+"answer": ...
+}
+
+The response MUST contain:
+
+- steps
+- final_answer
+
+No other schema allowed.
 """
-    }
+def build_prompt(problem_type: str, question:str, truth:str) -> str:
+    if not isinstance(truth, dict):
+        truth = {"answer": []}
 
+    verified = truth.get("answer", [])
 
-def trig_prompt(question, truth):
+    return f"""
+{BASE_SYSTEM_PROMPT}
 
-    return {
-        "prompt": f"""
-You are a trigonometry equation solver.
+problem_type: {problem_type}
+question: {question}
+verified_answer: {verified}
 
-Problem:
-{question}
-
-Verified Answer:
-{truth["answer"]}
-
-RULES:
-- Use identities only if required
-- Keep transformations algebraic
-- No narrative text
-- JSON only
-
-Allowed identities:
-- sin^2 + cos^2 = 1
-- tan = sin/cos
-- angle solutions in [0, 2π] if needed
-
-OUTPUT:
-{{
-  "steps": [{{"text": "...", "expression": "..."}}],
-  "final_answer": []
-}}
+Return ONLY JSON.
 """
-    }
-
-
-def polynomial_prompt(question, truth):
-
-    return {
-        "prompt": f"""
-You are a polynomial equation solver.
-
-Problem:
-{question}
-
-Verified Answer:
-{truth["answer"]}
-
-RULES:
-- Factorization preferred
-- Substitution allowed (x^2 = y)
-- One algebra step per line
-- Strict JSON only
-
-OUTPUT:
-{{
-  "steps": [{{"text": "...", "expression": "..."}}],
-  "final_answer": []
-}}
-"""
-    }
-
-def general_equation_prompt(question, truth):
-
-    return {
-        "prompt": f"""
-You are a general equation solver.
-
-Problem:
-{question}
-
-Verified Answer:
-{truth["answer"]}
-
-RULES:
-- strict JSON only
-
-OUTPUT:
-{{
-  "steps": [{{"text": "...", "expression": "..."}}],
-  "final_answer": []
-}}
-"""
-    }
