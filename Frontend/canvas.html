@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Math Whiteboard</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: Arial;
+    }
+
+    canvas {
+      border: 2px solid black;
+      margin-top: 10px;
+    }
+
+    .toolbar {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Math Whiteboard</h2>
+
+<div class="toolbar">
+  <button onclick="clearCanvas()">Clear</button>
+</div>
+
+<canvas id="board" width="800" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+
+let drawing = false;
+
+// start drawing
+canvas.addEventListener("mousedown", (e) => {
+  drawing = true;
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+});
+
+// draw
+canvas.addEventListener("mousemove", (e) => {
+  if (!drawing) return;
+
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+});
+
+// stop drawing
+canvas.addEventListener("mouseup", () => {
+  drawing = false;
+});
+
+// touch support (mobile)
+canvas.addEventListener("touchstart", (e) => {
+  drawing = true;
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  ctx.beginPath();
+  ctx.moveTo(t.clientX - rect.left, t.clientY - rect.top);
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  if (!drawing) return;
+
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+
+  ctx.lineTo(t.clientX - rect.left, t.clientY - rect.top);
+  ctx.stroke();
+});
+
+canvas.addEventListener("touchend", () => {
+  drawing = false;
+});
+
+// clear
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+</script>
+
+</body>
+</html>
