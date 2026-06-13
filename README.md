@@ -39,6 +39,7 @@ INFO:     127.0.0.1:60581 - "POST /solve_math HTTP/1.1" 200 OK
 
 yes!. it's successfully generated but not attractive enough.  because steps count is not enough. now i couldn't do anything because i need to move speed. so i have to design next part that "log"
 
+problem: Frontend output window and canvas nothing shown and llm ouput has latx letter and curly braces not the end of an steps and final answer
 
 
          
