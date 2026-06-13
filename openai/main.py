@@ -175,41 +175,26 @@ def extract_json(text: str):
 
     text = text.strip()
 
-    # remove markdown
-    text = text.replace("```json", "").replace("```", "").strip()
+    # remove markdown wrappers
+    text = text.replace("```json", "").replace("```", "")
 
-    # try direct parse
-    try:
-        return json.loads(text)
-    except:
-        pass
-
-    # try to FIX common LLM issues
-    try:
-        # remove trailing commas
-        text = re.sub(r",\s*}", "}", text)
-        text = re.sub(r",\s*]", "]", text)
-
-        return json.loads(text)
-    except:
-        pass
-
-    # fallback: extract first JSON block
+    # extract JSON block
     match = re.search(r"\{[\s\S]*\}", text)
+    if not match:
+        return None
+
+    json_str = match.group()
+
+    # fix common LLM issues
+    json_str = json_str.replace("\\(", "(").replace("\\)", ")")
+    json_str = re.sub(r",\s*}", "}", json_str)
+    json_str = re.sub(r",\s*]", "]", json_str)
 
     try:
-        return json.loads(match.group())
-    except json.JSONDecodeError:
-        # last resort cleanup
-        cleaned = match.group()
-        cleaned = re.sub(r",\s*}", "}", cleaned)
-        cleaned = re.sub(r",\s*]", "]", cleaned)
-
-        try:
-            return json.loads(cleaned)
-        except:
-            return None
-
+        return json.loads(json_str)
+    except Exception as e:
+        print("JSON PARSE FAILED:", e)
+        return None
 # =========================
 # 🚀 MAIN ENDPOINT
 # =========================
@@ -283,6 +268,8 @@ async def solve_math(q: Question):
         print("Question:", q.question)
         print("Truth:", truth)
         print("RAW OUTPUT:", llama_output, flush = True)
+        print("RAW LENGTH:", len(llama_output))
+        print(repr(llama_output))
        
 
         json_data = extract_json(llama_output)
@@ -388,3 +375,39 @@ async def solve_math(q: Question):
                 "reason": str(e)
             }
         )      
+    
+
+from fastapi.responses import StreamingResponse
+import json
+import time
+
+@app.post("/solve_math_stream")
+async def solve_math_stream(q: Question):
+
+    def generator():
+
+        # ⚠️ TEMP DEMO FLOW (replace later with LLM tokens)
+        steps = [
+            "Factor equation",
+            "Convert to quadratic form",
+            "Solve factors",
+            "Final answer found"
+        ]
+
+        for step in steps:
+            chunk = {
+                "type": "token",
+                "text": step + "\n"
+            }
+
+            yield f"data: {json.dumps(chunk)}\n\n"
+            time.sleep(0.5)
+
+        final = {
+            "type": "done",
+            "full": "x = -3, -1, 1, 3"
+        }
+
+        yield f"data: {json.dumps(final)}\n\n"
+
+    return StreamingResponse(generator(), media_type="text/event-stream")

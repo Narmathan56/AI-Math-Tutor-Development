@@ -5,8 +5,11 @@ let canvas = null;
 let ctx = null;
 let drawing = false;
 
+// streaming buffer
+let liveText = "";
+
 // =========================
-// INIT CANVAS (SAFE)
+// INIT CANVAS
 // =========================
 window.onload = () => {
     canvas = document.getElementById("board");
@@ -18,7 +21,6 @@ window.onload = () => {
 
     ctx = canvas.getContext("2d");
 
-    // Mouse events
     canvas.addEventListener("mousedown", startDraw);
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stopDraw);
@@ -55,15 +57,16 @@ function stopDraw() {
 // =========================
 function clearCanvas() {
     if (!ctx || !canvas) return;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 // =========================
-// LATEX HELPER
+// SAFE TEXT CONVERTER
 // =========================
 function convertToLatex(text) {
-    if (!text) return "";
+    if (text === null || text === undefined) return "";
+    text = String(text);
+
     return text.replace(/([a-zA-Z])(\d+)/g, "$1^{$2}");
 }
 
@@ -80,108 +83,85 @@ function renderMath() {
 }
 
 // =========================
-// MAIN API CALL
+// STREAMING RENDER (CHAT + CANVAS SYNC)
+// =========================
+function updateLiveUI(chunk) {
+    const replyText = document.getElementById("replyText");
+
+    liveText += chunk;
+
+    // show chat live
+    replyText.innerHTML = convertToLatex(liveText);
+
+    // optional: live canvas update
+    if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = "20px Arial";
+        ctx.fillText(liveText, 20, 50);
+    }
+}
+
+// =========================
+// MAIN STREAMING CALL
 // =========================
 async function askTutor() {
+
     const question = document.getElementById("mathQuestion").value;
     const replyText = document.getElementById("replyText");
-    const responseContainer = document.getElementById("responseContainer");
+    const container = document.getElementById("responseContainer");
 
-    if (!question) {
-        alert("Please type a question first!");
-        return;
-    }
+    if (!question) return;
 
+    liveText = "";
     replyText.innerHTML = "Thinking...";
-    responseContainer.classList.remove("hidden");
+    container.classList.remove("hidden");
 
     try {
         const response = await fetch("http://127.0.0.1:8000/solve_math", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ question })
         });
 
         const data = await response.json();
 
-        let output = "";
+        console.log("RESPONSE:", data);
 
-        // =========================
-        // SOLUTION TYPE
-        // =========================
         if (data.type === "solution") {
-            const sol = data.data || {};
 
-            output += "<b>Steps:</b><br>";
+            const sol = data.data;
 
-            if (Array.isArray(sol.steps)) {
-                sol.steps.forEach((step, index) => {
-                    let stepContent =
-                        typeof step === "object"
-                            ? step.text || step.expression || ""
-                            : step;
+            // TEXT
+            let output = "<b>Steps:</b><br>";
 
-                    stepContent = convertToLatex(stepContent);
-
-                    output += `${index + 1}. $$${stepContent}$$ <br>`;
-                });
+            for (const step of sol.steps || []) {
+                output += `• ${step.text || step.expression}<br>`;
             }
 
-            if (sol.final_answer !== undefined) {
-                output += `<br><b>Final Answer:</b> $$${convertToLatex(sol.final_answer)}$$`;
-            }
-
-            output += `<br><br>🧠 Model: ${data.model_used || "unknown"}`;
+            output += `<br><b>Answer:</b> ${sol.final_answer}`;
 
             replyText.innerHTML = output;
-            renderMath();
 
-            // 👉 CONNECT TO CANVAS
-            drawSolution(sol.steps || [], sol.final_answer || []);
+            // CANVAS
+            drawSolution(sol.steps, sol.final_answer);
         }
 
-        // =========================
-        // CHAT TYPE
-        // =========================
         else if (data.type === "chat") {
-            const msg = data.data?.response || "";
-
-            output = convertToLatex(msg);
-            replyText.innerHTML = `$$${output}$$`;
-
-            renderMath();
-
-            // 👉 SHOW ON CANVAS ALSO
-            clearCanvas();
-            if (ctx) {
-                ctx.font = "20px Arial";
-                ctx.fillText(msg, 20, 50);
-            }
-        }
-
-        // =========================
-        // ERROR TYPE
-        // =========================
-        else if (data.type === "error") {
-            replyText.innerHTML = `⚠️ ${data.data?.reason || "Error"}`;
-        }
-
-        else {
-            replyText.innerHTML = "Unexpected response format";
+            replyText.innerHTML = data.data.response;
+            ctx.fillText(data.data.response, 20, 50);
         }
 
     } catch (err) {
         console.error(err);
-        replyText.innerHTML = "🚫 Backend connection error";
+        replyText.innerHTML = "Backend error";
     }
 }
 
 // =========================
-// DRAW SOLUTION ON CANVAS
+// FINAL CANVAS DRAW
 // =========================
-async function drawSolution(steps, answer) {
+function drawSolution(steps, answer) {
+
     if (!ctx) return;
 
     clearCanvas();
@@ -193,12 +173,11 @@ async function drawSolution(steps, answer) {
 
     for (const step of steps || []) {
         const text = step.expression || step.text || "";
-
         ctx.fillText(text, 20, y);
         y += 40;
-
-        await new Promise(r => setTimeout(r, 500));
     }
 
-    ctx.fillText("Answer: " + answer, 20, y);
+    if (answer) {
+        ctx.fillText("Answer: " + answer, 20, y);
+    }
 }
