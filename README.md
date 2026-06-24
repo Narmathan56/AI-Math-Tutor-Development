@@ -41,6 +41,17 @@ yes!. it's successfully generated but not attractive enough.  because steps coun
 
 problem: Frontend output window and canvas nothing shown and llm ouput has latx letter and curly braces not the end of an steps and final answer
 
+Current Output Format: '{\n"steps": [\n{\n"text": "Given the polynomial equation x^4 - 10x^2 + 9 = 0",\n"expression": "x^4 - 10x^2 + 9"\n},\n{\n"text": "Let\'s make a substitution u = x^2 to simplify the equation",\n"expression": "u^2 - 10u + 9"\n},\n{\n"text": "Now, factor the quadratic equation",\n"expression": "(u-1)(u-9)"\n},\n{\n"text": "Substitute back in for u = x^2",\n"expression": "(x^2-1)(x^2-9)"\n},\n{\n"text": "Factor each term using difference of squares",\n"expression": "((x-1)(x+1))((x-3)(x+3))"\n},\n{\n"text": "Now, solve for x by setting each factor equal to zero",\n"expression": "(x-1) = 0, (x+1) = 0, (x-3) = 0, (x+3) = 0"\n},\n{\n"text": "Solve each equation for x",\n"expression": "-1, -1, 3, -3"\n}\n],\n"final_answer": [-3.0, -1.0, 1.0, 3.0]'
+JSON PARSE FAILED: Expecting ',' delimiter: line 30 column 2 (char 673)
+DEBUG json_data type: <class 'NoneType'>
+DEBUG json_data value: None
+STEP VALIDATION: []
+
+Fixes: I am trying the auto repire in Extract_json function
+Fix1: add debugging code inside the Extract Json. add the Ending Curly Brace and repire the Json Output where generate by the LLm. 
+
+
+
 
          
 
