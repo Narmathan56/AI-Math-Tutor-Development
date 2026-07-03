@@ -224,45 +224,61 @@ function drawSolution(steps, answer) {
 
     clearCanvas();
 
-    ctx.font = "14px Arial";
-    ctx.fillStyle = "black";
+    
 
-    const maxWidth = 500;   // fixed board width
-    const lineHeight = 22;
-    let x = 20;
-    let y = 40;
+   const LINE_HEIGHT = 30;
+   const START_X = 20;
+   const START_Y = 40;
+   const MAX_LINES = 10;
+   const FONT_SIZE = 14;
+   ctx.font = `${FONT_SIZE}px Arial`;
+   ctx.fillStyle = "black";
 
-    function wrapText(text) {
-        const words = text.split(" ");
-        let line = "";
+   function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(" ");
+    let line = "";
 
-        for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + " ";
-            const metrics = ctx.measureText(testLine);
+    for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + " ";
+        const width = ctx.measureText(testLine).width;
 
-            if (metrics.width > maxWidth && n > 0) {
-                ctx.fillText(line, x, y);
-                line = words[n] + " ";
-                y += lineHeight;
-            } else {
-                line = testLine;
-            }
+        if (width > maxWidth && i > 0) {
+            ctx.fillText(line, x, y);
+            line = words[i] + " ";
+            y += lineHeight;
+        } else {
+            line = testLine;
         }
-
-        ctx.fillText(line, x, y);
-        y += lineHeight;
     }
 
-    // draw steps
-    for (const step of steps || []) {
-        const text = step.text || step.expression || "";
-        wrapText(text);
-        y += 10;
-    }
+    ctx.fillText(line, x, y);
+    return y;
+}
 
+//Drawing Loop
+    let y = START_Y;
+
+
+for (const step of steps || []) {
+
+    const text = step.expression || step.text || "";
+
+    if (y > canvas.height - LINE_HEIGHT) break;
+
+    y = wrapText(
+        ctx,
+        text,
+        START_X,
+        y,
+        canvas.width - 40,
+        LINE_HEIGHT
+    );
+
+    y += 8; // small gap only
+}
     // answer box (fixed position style)
     y += 10;
-    ctx.fillText("Answer:", x, y);
-    y += lineHeight;
-    ctx.fillText(String(answer), x, y);
+    ctx.fillText("Answer:", START_X, y);
+    y += LINE_HEIGHT;
+    ctx.fillText(String(answer), START_X, y);
 }
