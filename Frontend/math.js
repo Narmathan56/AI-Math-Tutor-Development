@@ -113,50 +113,81 @@ async function askTutor() {
     if (!question) return;
 
     liveText = "";
-    replyText.innerHTML = "Thinking...";
+    replyText.innerHTML = "";
     container.classList.remove("hidden");
 
     try {
-        const response = await fetch("http://127.0.0.1:8000/solve_math", {
+        const response = await fetch("http://127.0.0.1:8000/solve_math_stream", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ question })
         });
 
-        const data = await response.json();
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
 
-        console.log("RESPONSE:", data);
+        let buffer = "";
 
-        if (data.type === "solution") {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
 
-            const sol = data.data;
+            buffer += decoder.decode(value, { stream: true });
 
-            // TEXT
-            let output = "<b>Steps:</b><br>";
+            // SSE messages are separated by \n\n
+            let parts = buffer.split("\n\n");
+            buffer = parts.pop();
 
-            for (const step of sol.steps || []) {
-                output += `• ${step.text || step.expression}<br>`;
+            for (let part of parts) {
+
+                if (!part.startsWith("data:")) continue;
+
+                const jsonStr = part.replace("data:", "").trim();
+
+                try {
+                    const chunk = JSON.parse(jsonStr);
+
+                    // =========================
+                    // STREAM TOKEN (TEXT)
+                    // =========================
+                    if (chunk.type === "token") {
+
+                        liveText += chunk.text;
+
+                        replyText.innerHTML = convertToLatex(liveText);
+
+                        if (ctx) {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.font = "20px Arial";
+                            ctx.fillText(liveText, 20, 50);
+                        }
+                    }
+
+                    // =========================
+                    // FINAL RESULT
+                    // =========================
+                    if (chunk.type === "done") {
+
+                        replyText.innerHTML += `<br><b>Final:</b> ${chunk.full}`;
+
+                        if (ctx) {
+                            ctx.fillText("Answer: " + chunk.full, 20, 100);
+                        }
+                    }
+
+                } catch (e) {
+                    console.error("Stream parse error:", e, jsonStr);
+                }
             }
-
-            output += `<br><b>Answer:</b> ${sol.final_answer}`;
-
-            replyText.innerHTML = output;
-
-            // CANVAS
-            drawSolution(sol.steps, sol.final_answer);
-        }
-
-        else if (data.type === "chat") {
-            replyText.innerHTML = data.data.response;
-            ctx.fillText(data.data.response, 20, 50);
         }
 
     } catch (err) {
         console.error(err);
-        replyText.innerHTML = "Backend error";
+        replyText.innerHTML = "Backend streaming error";
     }
 }
 
+    
 // =========================
 // FINAL CANVAS DRAW
 // =========================

@@ -1,62 +1,26 @@
-import requests
+import os
+from dotenv import load_dotenv
+from google import genai
 
-def call_llama(prompt: str) -> str:
-    try:
-        response = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": "llama3.2",
-                "prompt": prompt,
-                "stream": False,
-                "keep_alive": "10m",
-                "num_predict": 120,
-                "temperature": 0.0,
-                "top_p": 1.0,
-                "repeat_penalty": 1.0
-            },
-            timeout=240
-        )
+load_dotenv()
 
-        # -------------------
-        # HTTP CHECK
-        # -------------------
-        if response.status_code != 200:
-            print("❌ HTTP ERROR:", response.status_code)
-            print(response.text)
-            return ""
+def get_client():
+    api_key = os.getenv("OPEN_API_KEY")
 
-        # -------------------
-        # JSON PARSE SAFE
-        # -------------------
-        try:
-            data = response.json()
-        except Exception as e:
-            print("❌ JSON ERROR:", e)
-            print(response.text)
-            return ""
+    if not api_key:
+        raise ValueError("OPEN_API_KEY missing")
 
-        # -------------------
-        # EXTRACT RESPONSE
-        # -------------------
-        raw = data.get("response", "")
+    return genai.Client(api_key=api_key)
 
-        if not isinstance(raw, str):
-            raw = str(raw)
 
-        if not raw.strip():
-            print("❌ EMPTY RESPONSE FROM MODEL")
-            print("FULL DATA:", data)
-            return ""
+def stream_gemini(prompt: str):
+    client = get_client()
 
-        # -------------------
-        # CLEAN OUTPUT
-        # -------------------
-        raw = raw.strip()
-        raw = raw.replace("```json", "").replace("```", "")
-        raw = raw.replace("LLaMA executed", "")
+    response = client.models.generate_content_stream(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
 
-        return raw.strip()
-
-    except Exception as e:
-        print("🔥 REQUEST FAILED:", str(e))
-        return ""
+    for chunk in response:
+        if chunk.text:
+            yield chunk.text

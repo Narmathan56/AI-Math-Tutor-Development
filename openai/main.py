@@ -9,10 +9,11 @@ import time
 
 from dotenv import load_dotenv
 from google import genai
+from torch import full
 from Services.ValidationChecker import validate_solution,normalize_math_input,solve,compute_ground_truth,compare_answers, parse_answers, validate_transition
 from Services.problemTypeDetector import classify
 from Services.prompt_router import build_prompt
-from Services.Load_Model import call_llama
+from Services.Load_Model import stream_gemini, get_client
 from functools import lru_cache
 import json
 
@@ -22,6 +23,14 @@ client = genai.Client(api_key=os.getenv("OPEN_API_KEY"))
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
 # =========================
 # LIVE ACCURACY STATS
 # =========================
@@ -30,12 +39,7 @@ TOTAL_REQUESTS = 0
 CORRECT_ANSWERS = 0
 FAILED_ANSWERS = 0
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
+
 
 # =========================
 # INPUT MODEL
@@ -190,6 +194,12 @@ def extract_json(text: str):
     json_str = re.sub(r",\s*}", "}", json_str)
     json_str = re.sub(r",\s*]", "]", json_str)
 
+    open_braces = json_str.count("{")
+    close_braces = json_str.count("}")
+
+    if close_braces < open_braces:
+        json_str += "}" * (open_braces - close_braces)
+ 
     try:
         return json.loads(json_str)
     except Exception as e:
@@ -253,7 +263,7 @@ async def solve_math(q: Question):
         TOTAL_REQUESTS += 1
         print("step 2 reached", flush=True)
 
-        llama_output = call_llama(route)
+        llama_output = stream_gemini(route)
         print("step 3 reached", flush=True)
         if not llama_output or llama_output.strip() == "":
           return wrap_response(
@@ -377,37 +387,79 @@ async def solve_math(q: Question):
         )      
     
 
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 import json
-import time
+
+
+
+class Question(BaseModel):
+    question: str
+
+
+# dummy imports (replace with your real ones)
+# from Services.problemTypeDetector import classify
+# from Services.ValidationChecker import cached_ground_truth
+# from Services.prompt_router import build_prompt
+# from Services.Load_Model import stream_gemini
+
 
 @app.post("/solve_math_stream")
 async def solve_math_stream(q: Question):
 
-    def generator():
+    # 1. preprocess
+    problem_type = classify(q.question.lower())
+    clean_question = normalize_math_input(q.question)
 
-        # ⚠️ TEMP DEMO FLOW (replace later with LLM tokens)
-        steps = [
-            "Factor equation",
-            "Convert to quadratic form",
-            "Solve factors",
-            "Final answer found"
-        ]
+    truth = cached_ground_truth(clean_question)
 
-        for step in steps:
-            chunk = {
-                "type": "token",
-                "text": step + "\n"
-            }
-
-            yield f"data: {json.dumps(chunk)}\n\n"
-            time.sleep(0.5)
-
-        final = {
-            "type": "done",
-            "full": "x = -3, -1, 1, 3"
+    # safety check
+    if truth is None:
+        return {
+            "type": "error",
+            "data": {"reason": "Invalid truth"}
         }
 
-        yield f"data: {json.dumps(final)}\n\n"
+    route = build_prompt(problem_type, q.question, truth)
 
-    return StreamingResponse(generator(), media_type="text/event-stream")
+    # 2. streaming generator
+    def generator():
+        full = ""
+
+        try:
+            # stream tokens from Gemini
+            for token in stream_gemini(route):
+
+                if not token:
+                    continue
+
+                full += token
+
+                chunk = {
+                    "type": "token",
+                    "text": token
+                }
+
+                yield f"data: {json.dumps(chunk)}\n\n"
+
+        except Exception as e:
+            error_chunk = {
+                "type": "error",
+                "message": str(e)
+            }
+            yield f"data: {json.dumps(error_chunk)}\n\n"
+            return
+
+        # 3. final response AFTER streaming ends
+        final_chunk = {
+            "type": "done",
+            "full": full
+        }
+
+        yield f"data: {json.dumps(final_chunk)}\n\n"
+
+    return StreamingResponse(
+        generator(),
+        media_type="text/event-stream"
+    )

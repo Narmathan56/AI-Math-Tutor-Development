@@ -7,61 +7,22 @@ You will receive:
 - question
 - verified_answer
 
-RULES:
-- Always output ONLY valid JSON
-- No explanations
-- No code
-- No markdown
-- No extra keys
+Return ONLY JSON.
 
-IMPORTANT:
-You MUST return this EXACT JSON structure.
-
-Do NOT use:
-- \( \)
-- \[
-- LaTeX formatting
-- extra commentary
-- trailing commas
-
-DO NOT change key names.
-
-DO NOT omit steps.
-
-VALID FORMAT:
+Schema:
 
 {
-"steps": [
-{
-"text": "concept",
-"expression": "equation"
-},
-Note: next step should suitably follow from the previous step. If the next step is not derivable from the previous step, you MUST include a new step that explains how to get to the next step. 
-{
-"text": "concept",
-"expression": "equation"
-}
-],
-"final_answer": Answer
+  "steps":[
+    {
+      "text":"string",
+      "expression":"string"
+    }
+  ],
+  "final_answer":[]
 }
 
-INVALID:
-{
-"solution": "...",
-"algorithm": "..."
-}
-
-INVALID:
-{
-"answer": ...
-}
-
-The response MUST contain:
-
-- steps
-- final_answer
-
-No other schema allowed.
+No markdown.
+No explanation outside JSON.
 """
 def build_prompt(problem_type: str, question:str, truth:str) -> str:
     if not isinstance(truth, dict):
