@@ -168,12 +168,39 @@ async function askTutor() {
                     // =========================
                     if (chunk.type === "done") {
 
-                        replyText.innerHTML += `<br><b>Final:</b> ${chunk.full}`;
+    // parse JSON safely
+                        let data = null;
 
-                        if (ctx) {
-                            ctx.fillText("Answer: " + chunk.full, 20, 100);
-                        }
-                    }
+                        try {
+        data = typeof chunk.full === "string"
+            ? JSON.parse(chunk.full)
+            : chunk.full;
+    } catch (e) {
+        console.error("JSON parse failed", e);
+        return;
+    }
+
+    // extract clean answer
+    const answer = data.final_answer;
+
+    // UI display (clean)
+    replyText.innerHTML += `<br><b>Final Answer:</b> ${answer}`;
+
+    // canvas display (clean)
+    if (ctx) {
+        clearCanvas();
+
+        let y = 40;
+
+        for (const step of (data.steps || [])) {
+            const text =  step.expression || "";
+            ctx.fillText(text, 20, y);
+            y += 40;
+        }
+
+        ctx.fillText("Answer: " + answer, 20, y + 20);
+    }
+}
 
                 } catch (e) {
                     console.error("Stream parse error:", e, jsonStr);
@@ -197,18 +224,45 @@ function drawSolution(steps, answer) {
 
     clearCanvas();
 
-    ctx.font = "18px Arial";
+    ctx.font = "14px Arial";
     ctx.fillStyle = "black";
 
+    const maxWidth = 500;   // fixed board width
+    const lineHeight = 22;
+    let x = 20;
     let y = 40;
 
-    for (const step of steps || []) {
-        const text = step.expression || step.text || "";
-        ctx.fillText(text, 20, y);
-        y += 40;
+    function wrapText(text) {
+        const words = text.split(" ");
+        let line = "";
+
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + " ";
+            const metrics = ctx.measureText(testLine);
+
+            if (metrics.width > maxWidth && n > 0) {
+                ctx.fillText(line, x, y);
+                line = words[n] + " ";
+                y += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+
+        ctx.fillText(line, x, y);
+        y += lineHeight;
     }
 
-    if (answer) {
-        ctx.fillText("Answer: " + answer, 20, y);
+    // draw steps
+    for (const step of steps || []) {
+        const text = step.text || step.expression || "";
+        wrapText(text);
+        y += 10;
     }
+
+    // answer box (fixed position style)
+    y += 10;
+    ctx.fillText("Answer:", x, y);
+    y += lineHeight;
+    ctx.fillText(String(answer), x, y);
 }
