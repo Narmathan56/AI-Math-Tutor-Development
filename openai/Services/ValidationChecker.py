@@ -186,6 +186,34 @@ def normalize_math_input(expr: str) -> str:
     # -------------------------
     expr = expr.replace("^", "**")
 
+
+    # for the text questions
+
+    expr = expr.lower()
+
+    expr = expr.replace("what is", "")
+    expr = expr.replace("plus", "+")
+    expr = expr.replace("minus", "-")
+    expr = expr.replace("times", "*")
+    expr = expr.replace("multiplied by", "*")
+    expr = expr.replace("divided by", "/")
+
+    expr = expr.replace("zero", "0")
+    expr = expr.replace("one", "1")
+    expr = expr.replace("two", "2")
+    expr = expr.replace("three", "3")
+    expr = expr.replace("four", "4")
+    expr = expr.replace("five", "5")
+    expr = expr.replace("six", "6")
+    expr = expr.replace("seven", "7")
+    expr = expr.replace("eight", "8")
+    expr = expr.replace("nine", "9")
+    expr = expr.replace("ten", "10")
+
+    expr = expr.strip()
+    
+
+
     return expr
 # =========================
 # ANSWER PARSER (STRONG)

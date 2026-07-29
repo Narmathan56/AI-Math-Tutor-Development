@@ -1,43 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Tutor</title>
-
-    <link rel="stylesheet" href="chat.css">
-
-    <!-- KaTeX CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-
-    <!-- KaTeX JS -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="chat.css">
+    <script src="math.js"></script>
 </head>
 <body>
 
-<div class="container">
-    <h1>Math Tutor</h1>
-    <p>Ask me any math question!</p>
+<!-- CHAT SECTION -->
+<div id="chatPage" class="page active">
+    <div class="container">
+        <h1>Math Tutor</h1>
+        <p>Ask me any math question!</p>
 
-    <input type="text" id="mathQuestion" placeholder="Example: x^4 - 10x^2 + 9 = 0">
-    <button onclick="askTutor()">Ask Tutor</button>
+        <input type="text" id="mathQuestion" placeholder="Example: x^4 - 10x^2 + 9 = 0">
+        <button onclick="askTutor()">Ask Tutor</button>
 
-    <div id="responseContainer" class="hidden">
-        <h3>Tutor's Answer:</h3>
-        <div id="replyText"></div>
+        <div id="responseContainer" class="hidden">
+            <h3>Tutor's Answer:</h3>
+            <div id="replyText"></div>
+        </div>
     </div>
-</div>
-<div class="toolbar">
-  <button onclick="clearCanvas()">Clear</button>
+
+    <button onclick="openWhiteboard()">Toggle Canvas</button>
 </div>
 
-<canvas id="board"
-        width="800"
-        height="400">
-</canvas>
 
-<script src="math.js"></script>
+<!-- WHITEBOARD SECTION -->
+<div id="canvasPage" class="page">
+
+    <div class="toolbar">
+        <button onclick="clearCanvas()">Clear</button>
+        <button onclick="openChat()">Back to Chat</button>
+    </div>
+
+    <canvas id="board" width="800" height="400"></canvas>
+</div>
 
 </body>
-</html>

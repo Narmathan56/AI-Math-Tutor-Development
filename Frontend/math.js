@@ -1,4 +1,17 @@
 // =========================
+// PAGE TOGGLE
+// =========================
+function openWhiteboard() {
+    document.getElementById("chatPage").classList.remove("active");
+    document.getElementById("canvasPage").classList.add("active");
+}
+
+function openChat() {
+    document.getElementById("canvasPage").classList.remove("active");
+    document.getElementById("chatPage").classList.add("active");
+}
+
+// =========================
 // GLOBAL STATE
 // =========================
 let canvas = null;
@@ -11,7 +24,7 @@ let liveText = "";
 // =========================
 // INIT CANVAS
 // =========================
-window.onload = () => {
+window.addEventListener("DOMContentLoaded", () => {
     canvas = document.getElementById("board");
 
     if (!canvas) {
@@ -25,7 +38,7 @@ window.onload = () => {
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stopDraw);
     canvas.addEventListener("mouseleave", stopDraw);
-};
+});
 
 // =========================
 // DRAW FUNCTIONS
@@ -187,19 +200,9 @@ async function askTutor() {
     replyText.innerHTML += `<br><b>Final Answer:</b> ${answer}`;
 
     // canvas display (clean)
-    if (ctx) {
-        clearCanvas();
+    drawSolution(data.steps, answer);
 
-        let y = 40;
-
-        for (const step of (data.steps || [])) {
-            const text =  step.expression || "";
-            ctx.fillText(text, 20, y);
-            y += 40;
-        }
-
-        ctx.fillText("Answer: " + answer, 20, y + 20);
-    }
+    openWhiteboard();
 }
 
                 } catch (e) {
@@ -212,6 +215,21 @@ async function askTutor() {
         console.error(err);
         replyText.innerHTML = "Backend streaming error";
     }
+}
+function drawArrow(ctx, x, y, length = 25) {
+
+    // vertical line
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, y + length);
+    ctx.stroke();
+
+    // arrow head
+    ctx.beginPath();
+    ctx.moveTo(x - 5, y + length - 5);
+    ctx.lineTo(x, y + length);
+    ctx.lineTo(x + 5, y + length - 5);
+    ctx.stroke();
 }
 
     
@@ -256,15 +274,17 @@ function drawSolution(steps, answer) {
 }
 
 //Drawing Loop
-    let y = START_Y;
+let y = START_Y;
 
 
-for (const step of steps || []) {
+for (let i = 0; i < (steps || []).length; i++) {
 
+    const step = steps[i];
     const text = step.expression || step.text || "";
 
     if (y > canvas.height - LINE_HEIGHT) break;
 
+    // Draw the current step
     y = wrapText(
         ctx,
         text,
@@ -274,7 +294,26 @@ for (const step of steps || []) {
         LINE_HEIGHT
     );
 
-    y += 8; // small gap only
+    // Draw an arrow if this isn't the last step
+    if (i < steps.length - 1) {
+
+        y += 8;
+
+        // Arrow shaft
+        ctx.beginPath();
+        ctx.moveTo(START_X + 40, y);
+        ctx.lineTo(START_X + 40, y + 20);
+        ctx.stroke();
+
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(START_X + 35, y + 15);
+        ctx.lineTo(START_X + 40, y + 20);
+        ctx.lineTo(START_X + 45, y + 15);
+        ctx.stroke();
+
+        y += 30;
+    }
 }
     // answer box (fixed position style)
     y += 10;
