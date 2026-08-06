@@ -138,8 +138,7 @@ def normalize_math_input(expr: str) -> str:
     expr = expr.replace("−", "-")
     expr = expr.replace("𝑥", "x").replace("𝑋", "x")
 
-    # remove spaces
-    expr = re.sub(r"\s+", "", expr)
+   
 
     # -------------------------
     # HANDLE log base notation
@@ -162,7 +161,7 @@ def normalize_math_input(expr: str) -> str:
     # IMPLICIT MULTIPLICATION RULES
     # -------------------------
     # convert x3, x2, x10 → x^3, x^2, x^10
-    expr = re.sub(r"([a-zA-Z])(\d+)", r"\1^\2", expr)
+    expr = re.sub(r"\b([a-zA-Z])(\d+)\b", r"\1^\2", expr)
 
     # 2x -> 2*x
     expr = re.sub(r"(\d)([a-zA-Z])", r"\1*\2", expr)
@@ -211,6 +210,8 @@ def normalize_math_input(expr: str) -> str:
     expr = expr.replace("ten", "10")
 
     expr = expr.strip()
+     # remove spaces
+    expr = re.sub(r"\s+", "", expr)
     
 
 
