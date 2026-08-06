@@ -49,7 +49,16 @@ STEP VALIDATION: []
 
 Fixes: I am trying the auto repire in Extract_json function
 Fix1: add debugging code inside the Extract Json. add the Ending Curly Brace and repire the Json Output where generate by the LLm. 
+
+
+3.problem:
+
+
 <img width="446" height="53" alt="image" src="https://github.com/user-attachments/assets/1edd1941-7c0c-425a-9ffe-1f91d2eefb7f" />
+
+Reason and Fix: in "normalize_input"function has the code that "expr = re.sub(r"\s+", "", expr)" this code will remove the space between chunks after i wrote this code For arithmatic problems "expr = re.sub(r"([a-zA-Z])(\d+)",r"\1^\2",expr)" this join the letters with digit. and after i code "expr=re.replace("what is","")" this replace the "what is " is space(""). this applied to "what is 2+2" question so i have to push the re.sub(r"\s+", "", expr) to last after strip. and little modify the "expr = re.sub(r"([a-zA-Z])(\d+)",r"\1^\2",expr)" for concept.
+
+
 
 
 
