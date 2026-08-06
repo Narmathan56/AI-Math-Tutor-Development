@@ -49,6 +49,7 @@ STEP VALIDATION: []
 
 Fixes: I am trying the auto repire in Extract_json function
 Fix1: add debugging code inside the Extract Json. add the Ending Curly Brace and repire the Json Output where generate by the LLm. 
+<img width="446" height="53" alt="image" src="https://github.com/user-attachments/assets/1edd1941-7c0c-425a-9ffe-1f91d2eefb7f" />
 
 
 
