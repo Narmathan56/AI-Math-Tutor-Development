@@ -1,6 +1,19 @@
 import re
 def classify(q: str) -> str:
 
+
+    q = q.lower().strip()
+
+    if any(phrase in q for phrase in [
+        "why is the answer",
+        "why is this",
+        "why did",
+        "how did you get",
+        "explain this",
+        "what does this mean"
+    ]):
+        return "follow-up"
+
     # 1. CALCULUS (highest complexity priority)
     if any(k in q for k in [
         "derivative", "differentiate", "integrate",

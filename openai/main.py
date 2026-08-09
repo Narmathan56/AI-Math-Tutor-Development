@@ -14,10 +14,13 @@ from Services.ValidationChecker import validate_solution,normalize_math_input,so
 from Services.problemTypeDetector import classify
 from Services.prompt_router import build_prompt
 from Services.Load_Model import stream_gemini, get_client
+from Services.memory import MemoryManager
 from functools import lru_cache
 import json
 
 load_dotenv()
+
+memory_manager = MemoryManager()
 
 client = genai.Client(api_key=os.getenv("OPEN_API_KEY"))
 
@@ -210,6 +213,9 @@ def extract_json(text: str):
 # =========================
 @app.post("/solve_math")
 async def solve_math(q: Question):
+    #get the previous memory
+    memory = memory_manager.get_memory()
+    print("previous memory:", memory)
 
     global TOTAL_REQUESTS
     global CORRECT_ANSWERS
@@ -257,7 +263,8 @@ async def solve_math(q: Question):
         
         if not isinstance(truth, dict):
             raise ValueError(f"Invalid truth type: {type(truth)}")
-        route = build_prompt(problem_type, q.question, truth)
+        #just modifying build_prompt to accept memory as an argument and pass it to the prompt
+        route = build_prompt(problem_type, q.question, truth, memory)
         print("pass", flush=True)
 
         TOTAL_REQUESTS += 1
@@ -321,6 +328,14 @@ async def solve_math(q: Question):
         data=parsed_output,
         truth=truth
         )
+        #we shouldn't update memory before validation
+        if validation_result["valid"]:
+
+            memory_manager.update_memory(
+              question=q.question,
+              answer=parsed_output.get("final_answer"),
+              steps=parsed_output.get("steps", [])
+    )
 
         is_correct = validation_result["valid"]
         if not validation_result["valid"]:
@@ -420,8 +435,9 @@ async def solve_math_stream(q: Question):
             "type": "error",
             "data": {"reason": "Invalid truth"}
         }
+    memory =memory_manager.get_memory()
 
-    route = build_prompt(problem_type, q.question, truth)
+    route = build_prompt(problem_type, q.question, truth, memory)
 
     # 2. streaming generator
     def generator():

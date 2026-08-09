@@ -15,6 +15,8 @@ def get_step_text(step):
         return f"{text} {eq}".strip()
     return str(step)
 
+
+
 def compute_ground_truth(question: str):
     try:
         question = normalize_math_input(question)
