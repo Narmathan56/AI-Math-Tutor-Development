@@ -569,6 +569,11 @@ The next major engineering priorities are:
 
 The ultimate goal is to transform the system from an LLM that **answers mathematics questions** into an AI tutor that **generates, verifies, explains, and visually teaches mathematical solutions**.
 
+*problem*
+
+<img width="416" height="77" alt="image" src="https://github.com/user-attachments/assets/d6e590f4-da0e-4058-bd6f-f3e3951d3808" />
+
+
 
   
 
