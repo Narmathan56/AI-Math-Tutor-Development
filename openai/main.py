@@ -436,6 +436,7 @@ async def solve_math_stream(q: Question):
             "data": {"reason": "Invalid truth"}
         }
     memory =memory_manager.get_memory()
+    
 
     route = build_prompt(problem_type, q.question, truth, memory)
 
