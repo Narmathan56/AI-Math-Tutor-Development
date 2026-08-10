@@ -1,0 +1,13 @@
+# Ignore any folder named venv or .venv anywhere in the project
+**/venv/
+**/.venv/
+**/env/
+
+# Ignore any python cache
+**/__pycache__/
+*.pyc
+
+# Ignore local environment variables and VS Code settings
+.env
+.vscode/
+*.code-workspace
