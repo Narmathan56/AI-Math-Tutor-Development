@@ -600,6 +600,51 @@ use the previous memory to understand the context.
 
 
   
+*problem*
 
+```text
+========== STREAM REQUEST ==========
+Question: what is 2+2
+Memory: {'previous_question': None, 'previous_answer': None, 'previous_steps': []}
+Problem type: concept
+Clean question: 2+2
+INFO:     127.0.0.1:53089 - "POST /solve_math_stream HTTP/1.1" 200 OK
+========== STREAM REQUEST ==========
+Question: why 4
+Memory: {'previous_question': None, 'previous_answer': None, 'previous_steps': []}
+Problem type: concept
+Clean question: why4
+SYMPY ERROR: Cannot convert expression to float
+INFO:     127.0.0.1:51806 - "POST /solve_math_stream HTTP/1.1" 200 OK
 
+```
+in first Streaming request has `Memory: {'previous_question': None, 'previous_answer': None, 'previous_steps': []}` 
+this is okay beacuse there's no previouse memory. 
+second  Streaming request also has `Memory: {'previous_question': None, 'previous_answer': None, 'previous_steps': []}`
+This is the problem when i ask `why 4` it should've explained about how 4 comes. but here no previous memory
+
+*Reason*
+I Forget to add the code for `Save memory` ending of the Streaming end-point. 
+when i `save memory` it will use to next question. so this is important to add.
+
+*fix*
+
+Added This code after Validate the answer because if i do before the Validate especially in Streaming, it will not good idea. when streaming llm gives the answer as token. token becoms chunks after it will become full. if i insert the save memory into that chunk will store on memory. not full answer at the same time i should've add this betweeen streaming point and call validate_answer function. if i store the answer without validation, sometimes llm gives the incorrect answer then this store the incorrect answer and recollect the incorrect answer . so i put this after validation
+
+```text
+if validation_result["valid"]:
+
+            memory_manager.update_memory(
+                question=q.question,
+                answer=parsed_output.get("final_answer"),
+                steps=parsed_output.get("steps", [])
+            )
+
+            print("MEMORY UPDATED:")
+            print(memory_manager.get_memory())
+
+        else:
+
+            print("MEMORY NOT UPDATED BECAUSE VALIDATION FAILED")
+```
 
