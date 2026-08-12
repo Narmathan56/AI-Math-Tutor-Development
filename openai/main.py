@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from google import genai
 from torch import full
 from Services.ValidationChecker import validate_solution,normalize_math_input,solve,compute_ground_truth,compare_answers, parse_answers, validate_transition
-from Services.problemTypeDetector import classify
+from Services.problemTypeDetector import classify,is_follow_up
 from Services.prompt_router import build_prompt
 from Services.Load_Model import stream_gemini, get_client
 from Services.memory import MemoryManager
@@ -213,7 +213,7 @@ def extract_json(text: str):
 # =========================
 @app.post("/solve_math")
 async def solve_math(q: Question):
-    #get the previous memory
+
     memory = memory_manager.get_memory()
     print("previous memory:", memory)
 
@@ -243,123 +243,164 @@ async def solve_math(q: Question):
             )
 
         # =====================
-        # CLASSIFY INPUT
+        # CHECK FOLLOW-UP FIRST
         # =====================
-        problem_type = classify(q.question.lower())
-        print("Classified Problem Type:", problem_type)
-        clean_question = normalize_math_input(q.question)
-        print("Normalized Question:", clean_question)
-        print("Classified Problem Type:", problem_type)
+        if is_follow_up(q.question, memory):
 
-        truth = cached_ground_truth(clean_question)
-        if truth is None or not isinstance(truth, dict) or "answer" not in truth:
-          return wrap_response("error", "system", {
-          "reason": "Invalid truth",
-          "truth": str(truth)
-    })
-        
-        print("DEBUG truth type:", type(truth))
-        print("DEBUG truth value:", truth)
-        
-        if not isinstance(truth, dict):
-            raise ValueError(f"Invalid truth type: {type(truth)}")
-        #just modifying build_prompt to accept memory as an argument and pass it to the prompt
-        route = build_prompt(problem_type, q.question, truth, memory)
-        print("pass", flush=True)
+            problem_type = "follow_up"
+
+            truth = {
+                "answer": memory.get("previous_answer", [])
+            }
+
+            route = build_prompt(
+                problem_type=problem_type,
+                question=q.question,
+                truth=truth,
+                memory=memory
+            )
+
+            print("FOLLOW-UP DETECTED")
+            print("Previous question:", memory.get("previous_question"))
+            print("Previous answer:", memory.get("previous_answer"))
+
+        else:
+
+            # =====================
+            # NORMAL MATH QUESTION
+            # =====================
+            problem_type = classify(q.question.lower())
+
+            print("Classified Problem Type:", problem_type)
+
+            clean_question = normalize_math_input(q.question)
+
+            print("Normalized Question:", clean_question)
+
+            truth = cached_ground_truth(clean_question)
+
+            if truth is None or not isinstance(truth, dict) or "answer" not in truth:
+                return wrap_response(
+                    "error",
+                    "system",
+                    {
+                        "reason": "Invalid truth",
+                        "truth": str(truth)
+                    }
+                )
+
+            route = build_prompt(
+                problem_type,
+                q.question,
+                truth,
+                memory
+            )
+
+        # =====================
+        # LLM
+        # =====================
 
         TOTAL_REQUESTS += 1
-        print("step 2 reached", flush=True)
 
         llama_output = stream_gemini(route)
-        print("step 3 reached", flush=True)
+
         if not llama_output or llama_output.strip() == "":
-          return wrap_response(
-        "error",
-        model_used,
-        {"reason": "LLM returned empty response"}
-    )
+            return wrap_response(
+                "error",
+                model_used,
+                {
+                    "reason": "LLM returned empty response"
+                }
+            )
+
         model_used = "llama"
-        print("step reached", flush=True)
-        
+
         print("\n=== NEW REQUEST ===")
         print("Question:", q.question)
+        print("Problem type:", problem_type)
         print("Truth:", truth)
-        print("RAW OUTPUT:", llama_output, flush = True)
-        print("RAW LENGTH:", len(llama_output))
-        print(repr(llama_output))
-       
+        print("RAW OUTPUT:", llama_output)
+
+        # =====================
+        # PARSE OUTPUT
+        # =====================
 
         json_data = extract_json(llama_output)
-        print("DEBUG json_data type:", type(json_data))
-        print("DEBUG json_data value:", json_data)
 
         if json_data:
-          parsed_output = normalize_llm_output(json_data)
+            parsed_output = normalize_llm_output(json_data)
         else:
-          parsed_output = parse_step_output(llama_output)
+            parsed_output = parse_step_output(llama_output)
 
-        
-
-        # fallback answer extraction
         # fallback answer extraction
         if not parsed_output.get("final_answer"):
-           final_line = extract_final_line(llama_output)
-           extracted_answers = parse_answers(final_line)
-           parsed_output["final_answer"] = list(extracted_answers)
-        ## safty fall back
+            final_line = extract_final_line(llama_output)
+            extracted_answers = parse_answers(final_line)
+            parsed_output["final_answer"] = list(extracted_answers)
+
+        # safety fallback
         if not parsed_output["steps"] and not parsed_output["final_answer"]:
-           parsed_output = {
-            "steps": [],
-            "final_answer": llama_output
-         }
-        if truth is None or not isinstance(truth, dict) or "answer" not in truth:
-          return wrap_response("error", "system", {
-          "reason": "Invalid truth",
-          "truth": str(truth)
-    })
+            parsed_output = {
+                "steps": [],
+                "final_answer": llama_output
+            }
 
-# =========================
-# ACCURACY CHECK (IMPORTANT FIX)
-# =========================
+        # =====================
+        # FOLLOW-UP RESPONSE
+        # =====================
 
+        if problem_type == "follow_up":
+
+            # Don't run mathematical validation on a conversational follow-up.
+            return wrap_response(
+                "solution",
+                model_used,
+                parsed_output
+            )
+
+        # =====================
+        # NORMAL MATH VALIDATION
+        # =====================
 
         validation_result = validate_solution(
-        problem=q.question,
-        data=parsed_output,
-        truth=truth
+            problem=q.question,
+            data=parsed_output,
+            truth=truth
         )
-        #we shouldn't update memory before validation
+
         if validation_result["valid"]:
 
             memory_manager.update_memory(
-              question=q.question,
-              answer=parsed_output.get("final_answer"),
-              steps=parsed_output.get("steps", [])
-    )
+                question=q.question,
+                answer=parsed_output.get("final_answer"),
+                steps=parsed_output.get("steps", [])
+            )
 
-        is_correct = validation_result["valid"]
         if not validation_result["valid"]:
+
+            FAILED_ANSWERS += 1
+
             return wrap_response(
-            "error",
-            model_used,
-           {
-            "reason": validation_result["reason"],
-            "expected": truth["answer"],
-            "got": parsed_output.get("final_answer")
-           }
-         )
+                "error",
+                model_used,
+                {
+                    "reason": validation_result["reason"],
+                    "expected": truth["answer"],
+                    "got": parsed_output.get("final_answer")
+                }
+            )
+
+        CORRECT_ANSWERS += 1
 
         response_time = round(time.time() - start_time, 2)
 
-        if is_correct:
-            CORRECT_ANSWERS += 1
-        else:
-            FAILED_ANSWERS += 1
-
-        accuracy = round((CORRECT_ANSWERS / TOTAL_REQUESTS) * 100, 2)
+        accuracy = round(
+            (CORRECT_ANSWERS / TOTAL_REQUESTS) * 100,
+            2
+        )
 
         print("\n===== VALIDATION RESULT =====")
-        print("STATUS:", "CORRECT" if is_correct else "FAILED")
+        print("STATUS: CORRECT")
         print("TOTAL REQUESTS:", TOTAL_REQUESTS)
         print("CORRECT:", CORRECT_ANSWERS)
         print("FAILED:", FAILED_ANSWERS)
@@ -367,28 +408,12 @@ async def solve_math(q: Question):
         print("RESPONSE TIME:", f"{response_time}s")
         print("=============================\n")
 
-        if not is_correct:
-            return wrap_response(
-            "error",
-            model_used,
-           {
-            "reason": validation_result["reason"],
-            "expected": truth["answer"],
-            "got": parsed_output.get("final_answer")
-          }
-         )
-
         return wrap_response(
-    "solution",
-    model_used,
-    parsed_output
-)
-       
-        
+            "solution",
+            model_used,
+            parsed_output
+        )
 
-    # =====================
-    # GLOBAL ERROR SAFETY
-    # =====================
     except Exception as e:
 
         print("\n🔥 SERVER CRASH:", str(e))
@@ -399,7 +424,7 @@ async def solve_math(q: Question):
             {
                 "reason": str(e)
             }
-        )      
+        )   
     
 
 from fastapi import FastAPI
@@ -423,29 +448,78 @@ class Question(BaseModel):
 @app.post("/solve_math_stream")
 async def solve_math_stream(q: Question):
 
-    # 1. preprocess
-    problem_type = classify(q.question.lower())
-    clean_question = normalize_math_input(q.question)
+    memory = memory_manager.get_memory()
 
-    truth = cached_ground_truth(clean_question)
+    print("========== STREAM REQUEST ==========")
+    print("Question:", q.question)
+    print("Memory:", memory)
 
-    # safety check
-    if truth is None:
-        return {
-            "type": "error",
-            "data": {"reason": "Invalid truth"}
+    # =================================
+    # CHECK FOLLOW-UP FIRST
+    # =================================
+
+    is_followup = is_follow_up(q.question, memory)
+
+    if is_followup:
+
+        problem_type = "follow_up"
+
+        truth = {
+            "answer": memory.get("previous_answer", [])
         }
-    memory =memory_manager.get_memory()
-    
 
-    route = build_prompt(problem_type, q.question, truth, memory)
+        route = build_prompt(
+            problem_type=problem_type,
+            question=q.question,
+            truth=truth,
+            memory=memory
+        )
 
-    # 2. streaming generator
+        print("FOLLOW-UP DETECTED")
+        print("Previous question:", memory.get("previous_question"))
+        print("Previous answer:", memory.get("previous_answer"))
+
+    else:
+
+        # =================================
+        # NORMAL MATH QUESTION
+        # =================================
+
+        problem_type = classify(q.question.lower())
+
+        print("Problem type:", problem_type)
+
+        clean_question = normalize_math_input(q.question)
+
+        print("Clean question:", clean_question)
+
+        truth = cached_ground_truth(clean_question)
+
+        if truth is None:
+            return {
+                "type": "error",
+                "data": {
+                    "reason": "Invalid truth"
+                }
+            }
+
+        route = build_prompt(
+            problem_type,
+            q.question,
+            truth,
+            memory
+        )
+
+    # =================================
+    # STREAMING GENERATOR
+    # =================================
+
     def generator():
+
         full = ""
 
         try:
-            # stream tokens from Gemini
+
             for token in stream_gemini(route):
 
                 if not token:
@@ -461,17 +535,108 @@ async def solve_math_stream(q: Question):
                 yield f"data: {json.dumps(chunk)}\n\n"
 
         except Exception as e:
+
             error_chunk = {
                 "type": "error",
                 "message": str(e)
             }
+
             yield f"data: {json.dumps(error_chunk)}\n\n"
+
             return
 
-        # 3. final response AFTER streaming ends
+        # =================================
+        # STREAM FINISHED
+        # =================================
+
+        print("========== STREAM COMPLETE ==========")
+        print("RAW FULL OUTPUT:")
+        print(full)
+
+        # ---------------------------------
+        # FOLLOW-UP
+        # ---------------------------------
+
+        if is_followup:
+
+            final_chunk = {
+                "type": "done",
+                "full": full
+            }
+
+            yield f"data: {json.dumps(final_chunk)}\n\n"
+
+            return
+
+        # ---------------------------------
+        # NORMAL QUESTION
+        # PARSE LLM OUTPUT
+        # ---------------------------------
+
+        json_data = extract_json(full)
+
+        if json_data:
+
+            parsed_output = normalize_llm_output(json_data)
+
+        else:
+
+            parsed_output = parse_step_output(full)
+
+        # ---------------------------------
+        # FALLBACK ANSWER EXTRACTION
+        # ---------------------------------
+
+        if not parsed_output.get("final_answer"):
+
+            final_line = extract_final_line(full)
+
+            extracted_answers = parse_answers(final_line)
+
+            parsed_output["final_answer"] = list(extracted_answers)
+
+        print("PARSED OUTPUT:")
+        print(parsed_output)
+
+        # ---------------------------------
+        # VALIDATE NORMAL MATH
+        # ---------------------------------
+
+        validation_result = validate_solution(
+            problem=q.question,
+            data=parsed_output,
+            truth=truth
+        )
+
+        print("VALIDATION RESULT:")
+        print(validation_result)
+
+        # ---------------------------------
+        # SAVE MEMORY
+        # ---------------------------------
+
+        if validation_result["valid"]:
+
+            memory_manager.update_memory(
+                question=q.question,
+                answer=parsed_output.get("final_answer"),
+                steps=parsed_output.get("steps", [])
+            )
+
+            print("MEMORY UPDATED:")
+            print(memory_manager.get_memory())
+
+        else:
+
+            print("MEMORY NOT UPDATED BECAUSE VALIDATION FAILED")
+
+        # ---------------------------------
+        # FINAL RESPONSE
+        # ---------------------------------
+
         final_chunk = {
             "type": "done",
-            "full": full
+            "full": json.dumps(parsed_output)
         }
 
         yield f"data: {json.dumps(final_chunk)}\n\n"
