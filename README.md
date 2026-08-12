@@ -571,7 +571,31 @@ The ultimate goal is to transform the system from an LLM that **answers mathemat
 
 *problem*
 
-<img width="416" height="77" alt="image" src="https://github.com/user-attachments/assets/d6e590f4-da0e-4058-bd6f-f3e3951d3808" />
+My AI math Tutor single memory system doesn't work
+
+*Symtoms*
+When I ask "Why 4" after the Question "what is 2+2" it gives the answer from llm but not use the previouse text or question.
+
+```text
+question = q.question.strip().lower()
+
+problem_type = classify(q.question.lower())
+
+clean_question = normalize_math_input(q.question)
+
+truth = cached_ground_truth(clean_question)
+```
+Here, if i ask the `why 4` after question `what is 2+2`
+i haven't given the oppurchunity  to llm to see the previous anwer. so llm generlly do the truth instead of see the previous
+
+
+*fix*
+add one more prompt with which've already exist.
+
+```text
+If the current question refers to the previous question or previous answer,
+use the previous memory to understand the context.
+```
 
 
 
