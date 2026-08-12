@@ -7,6 +7,9 @@ You will receive:
 - question
 - verified_answer
 
+If the current question refers to the previous question or previous answer,
+use the previous memory to understand the context.
+
 Return ONLY JSON.
 
 Schema:
@@ -24,11 +27,9 @@ Schema:
 No markdown.
 No explanation outside JSON.
 """
-def build_prompt(problem_type: str, question:str, truth:str, memory:dict) -> str:
-    if not isinstance(truth, dict):
-        truth = {"answer": []}
+def build_prompt(problem_type: str, question: str, truth: dict, memory: dict) -> str:
 
-    verified = truth.get("answer", [])
+    verified = truth.get("answer", []) if isinstance(truth, dict) else []
 
     previous_question = memory.get("previous_question")
     previous_answer = memory.get("previous_answer")
@@ -37,17 +38,27 @@ def build_prompt(problem_type: str, question:str, truth:str, memory:dict) -> str
     return f"""
 {BASE_SYSTEM_PROMPT}
 
-problem_type: {problem_type}
-previous_question:{previous_question}
+Previous question:
+{previous_question}
 
-previous_answer:
+Previous answer:
 {previous_answer}
 
-previous_steps:
+Previous steps:
 {previous_steps}
 
-question: {question}
-verified_answer: {verified}
+Current question:
+{question}
+
+Verified answer for the current question:
+{verified}
+
+Important:
+- If the current question is a follow-up such as "why 4?", "how?",
+  "why is that the answer?", or "explain that", use the previous question,
+  previous answer, and previous steps.
+- Do not treat the follow-up as an unrelated new math problem.
+- Explain the relationship clearly.
 
 Return ONLY JSON.
 """

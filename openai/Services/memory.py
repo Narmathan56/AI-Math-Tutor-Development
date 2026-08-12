@@ -15,10 +15,10 @@ class MemoryManager:
             "previous_steps": self.previous_steps
         }
 
-    def update_memory(self, question, answer, stpes):
+    def update_memory(self, question, answer, steps):
         self.previous_question = question
         self.previous_answer = answer
-        self.previous_steps = stpes
+        self.previous_steps = steps
 
     def clear_memory(self):
         self.previous_question = None
