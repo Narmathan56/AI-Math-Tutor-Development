@@ -1,3 +1,9 @@
+#canvasWrapper {
+  width: 800;       /* Full screen width */
+  height: 400;      /* Full screen height */
+  overflow: auto;     /* Adds scrollbars automatically when needed */
+  background: #ccc;   /* Grey background to see the canvas boundaries */
+}
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f0f8ff;
