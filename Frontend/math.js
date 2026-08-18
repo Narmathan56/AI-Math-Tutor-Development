@@ -11,6 +11,8 @@ function openChat() {
     document.getElementById("chatPage").classList.add("active");
 }
 
+
+
 // =========================
 // GLOBAL STATE
 // =========================
