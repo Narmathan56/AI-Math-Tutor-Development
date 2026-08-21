@@ -42,6 +42,15 @@ window.addEventListener("DOMContentLoaded", () => {
     canvas.addEventListener("mouseleave", stopDraw);
 });
 
+
+function cleanExpression(expr) {
+    return String(expr)
+        .replace(/\\text\{([^}]*)\}/g, "$1")
+        .replace(/\\pm/g, "±")
+        .replace(/\\sqrt\{([^}]*)\}/g, "√($1)")
+        .replace(/\\/g, "");
+}
+
 // =========================
 // DRAW FUNCTIONS
 // =========================
@@ -202,6 +211,7 @@ async function askTutor() {
     replyText.innerHTML += `<br><b>Final Answer:</b> ${answer}`;
 
     // canvas display (clean)
+ 
     drawSolution(data.steps, answer);
 
     openWhiteboard();
@@ -340,10 +350,11 @@ function drawSolution(steps, answer) {
 
         const step = steps[i];
 
-        const expression =
-            step.expression ||
-            step.text ||
-            "";
+       const expression = cleanExpression(
+        step.expression ||
+        step.text ||
+        ""
+    );
 
         // Don't overflow canvas
         if (y > canvas.height - 80) {
