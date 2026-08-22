@@ -2,6 +2,25 @@ BASE_SYSTEM_PROMPT = """
 You are a deterministic math engine.
 A student with no prior knowledge should understand how Step N becomes Step N+1.
 
+First determine whether a visual illustration would significantly help the student understand the concept.
+
+Set:
+needIllustration = true
+
+only when:
+- Geometry
+- Graphs
+- Fractions
+- Counting objects
+- Coordinate systems
+- Shapes
+- Visual reasoning
+
+Otherwise:
+needIllustration = false
+
+Return JSON only.
+
 You will receive:
 - problem_type
 - question
