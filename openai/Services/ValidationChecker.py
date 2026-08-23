@@ -17,42 +17,97 @@ def get_step_text(step):
 
 
 
-def compute_ground_truth(question: str):
+def compute_ground_truth(question=None, concept_data=None):
+
     try:
+
+        # ==========================================
+        # CONCEPT CASE
+        # ==========================================
+
+        if concept_data is not None:
+
+            given = concept_data.get("given", {})
+            formula = concept_data.get("formula", "")
+
+            # Example:
+            # given = {"side": 5.6}
+            # formula = "4*side"
+
+            expression = formula
+
+            for variable, value in given.items():
+                expression = expression.replace(
+                    variable,
+                    str(value)
+                )
+
+            result = sympify(expression)
+
+            answer = result.evalf()
+
+            return {
+                "type": "concept",
+                "concept": concept_data.get("concept"),
+                "given": given,
+                "formula": formula,
+                "expression": expression,
+                "answer": [float(answer)]
+            }
+        if question is None:
+            return None
+        # ==========================================
+        # NORMAL QUESTION
+        # ==========================================
+
         question = normalize_math_input(question)
 
+        # ==========================================
         # EQUATION CASE
+        # ==========================================
+
         if "=" in question:
+
             lhs, rhs = question.split("=")
 
             lhs_expr = sympify(lhs)
             rhs_expr = sympify(rhs)
 
-            sol = solve(Eq(lhs_expr, rhs_expr), x)
+            sol = solve(
+                Eq(lhs_expr, rhs_expr),
+                x
+            )
 
             cleaned = []
+
             for s in sol:
-              try:
-                cleaned.append(float(s.evalf()))
-              except:
-                cleaned.append(str(s))  # keep symbolic fallback
+                try:
+                    cleaned.append(float(s.evalf()))
+                except:
+                    cleaned.append(str(s))
 
             return {
-             "type": "equation",
-             "answer": cleaned
-       }
+                "type": "equation",
+                "answer": cleaned
+            }
 
-            
+        # ==========================================
+        # NORMAL EXPRESSION CASE
+        # ==========================================
 
-        # ARITHMETIC CASE
         expr = sympify(question)
+
+        result = expr.evalf()
+
         return {
-            "type": "arithmetic",
-            "answer": float(expr)
+            "type": "expression",
+            "answer": [float(result)]
         }
 
     except Exception as e:
-        print("SYMPY ERROR:", e)
+
+        print("GROUND TRUTH ERROR:", e)
+
         return None
     
 def normalize_answer(ans):
@@ -304,56 +359,143 @@ def validate_steps(steps):
 # =========================
 # MAIN VALIDATOR
 # =========================
-def validate_solution(problem: str, data: dict, truth: dict):
+def validate_solution(problem, data, truth, problem_type=None):
     try:
-        if not data:
-            return {"valid": False, "reason": "Empty response"}
 
-        steps = data.get("steps") or data.get("result", {}).get("steps", [])
-        if not isinstance(steps, list):
-          steps = []
-        final_answer = data.get("final_answer")
+        # =========================
+        # BASIC CHECKS
+        # =========================
+
+        if not data:
+            return {
+                "valid": False,
+                "reason": "Empty response"
+            }
+
+        if not isinstance(truth, dict) or "answer" not in truth:
+            return {
+                "valid": False,
+                "reason": "Missing verified answer"
+            }
+
+        # =========================
+        # EXTRACT MODEL OUTPUT
+        # =========================
+
+        steps = data.get("steps") or data.get(
+            "result", {}
+        ).get("steps", [])
 
         if not isinstance(steps, list):
             steps = []
 
-        step_results=validate_steps(steps)
+        final_answer = data.get("final_answer")
+
+        # =========================
+        # STEP VALIDATION
+        # =========================
+
+        step_results = validate_steps(steps)
+
         print("STEP VALIDATION:", step_results)
 
-        clean_problem = normalize_math_input(problem)
+        # =========================
+        # NORMALIZE ANSWERS
+        # =========================
 
         user_answers = normalize_answer(final_answer)
         truth_answers = normalize_answer(truth["answer"])
 
-        # -------------------------
-        # EQUATION CASE
-        # -------------------------
-        if "=" in clean_problem:
+        # ==================================================
+        # CONCEPT CASE
+        # ==================================================
+        #
+        # IMPORTANT:
+        # Do NOT do:
+        #
+        #     sympify(problem)
+        #
+        # because the problem is natural language.
+        #
+        # Example:
+        #
+        # "Tom buys 5 notebooks at £2.40 each..."
+        #
+        # Instead, trust the already verified SymPy result
+        # stored in truth["answer"].
+        # ==================================================
+
+        if problem_type == "concept":
+
+            if not user_answers:
+                return {
+                    "valid": False,
+                    "reason": "Cannot parse final answer"
+                }
+
+            if not truth_answers:
+                return {
+                    "valid": False,
+                    "reason": "No verified concept answer"
+                }
+
+            # Compare numerical answers
+            user_val = list(user_answers)[0]
+            truth_val = list(truth_answers)[0]
+
+            valid = abs(user_val - truth_val) < 1e-6
+
             return {
-                "valid": set(user_answers) == set(truth_answers),
-                "reason": "ok"
+                "valid": valid,
+                "reason": "ok" if valid else "Final answer does not match verified answer"
             }
 
-        # -------------------------
-        # ARITHMETIC CASE
-        # -------------------------
+        # ==================================================
+        # EQUATION CASE
+        # ==================================================
+
+        clean_problem = normalize_math_input(problem)
+
+        if "=" in clean_problem:
+
+            valid = set(user_answers) == set(truth_answers)
+
+            return {
+                "valid": valid,
+                "reason": "ok" if valid else "Equation answer does not match verified answer"
+            }
+
+        # ==================================================
+        # NORMAL ARITHMETIC CASE
+        # ==================================================
+
         if not user_answers:
-            return {"valid": False, "reason": "Cannot parse final answer"}
+            return {
+                "valid": False,
+                "reason": "Cannot parse final answer"
+            }
 
         expr = sympify(clean_problem)
 
         if expr.free_symbols:
-            return {"valid": False, "reason": "Not arithmetic"}
+            return {
+                "valid": False,
+                "reason": "Not arithmetic"
+            }
 
         correct_val = float(expr.evalf())
+
         user_val = list(user_answers)[0]
 
+        valid = abs(user_val - correct_val) < 1e-6
+
         return {
-            "valid": abs(user_val - correct_val) < 1e-6,
-            "reason": "ok"
+            "valid": valid,
+            "reason": "ok" if valid else "Final answer does not match calculated answer"
         }
 
     except Exception as e:
+
         return {
             "valid": False,
             "reason": f"Validation error: {str(e)}"
