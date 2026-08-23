@@ -12,7 +12,7 @@ from google import genai
 from torch import full
 from Services.ValidationChecker import validate_solution,normalize_math_input,solve,compute_ground_truth,compare_answers, parse_answers, validate_transition
 from Services.problemTypeDetector import classify,is_follow_up
-from Services.prompt_router import build_prompt
+from Services.prompt_router import build_prompt, conceptBreak
 from Services.Load_Model import stream_gemini, get_client
 from Services.memory import MemoryManager
 from functools import lru_cache
@@ -273,14 +273,39 @@ async def solve_math(q: Question):
 
             print("Classified Problem Type:", problem_type)
 
-            clean_question = normalize_math_input(q.question)
+            
+            if problem_type == "concept":
 
-            print("Normalized Question:", clean_question)
+                print("CONCEPT QUESTION DETECTED")
 
-            truth = cached_ground_truth(clean_question)
+                #Concept Breaking
 
-            if truth is None or not isinstance(truth, dict) or "answer" not in truth:
-                return wrap_response(
+                concept_data = conceptBreak(
+                question=q.question,
+                client=client
+              )
+
+                print("CONCEPT DATA:", concept_data)
+                #Safety check for Concept data
+                if not concept_data:
+                    return wrap_response("error,system",{"reason": "Concept parsing failed"})
+
+        # TODO:
+        # Send concept_data to ValidationChecker
+        # and obtain verified answer
+
+                truth = compute_ground_truth(
+                concept_data=concept_data)
+            else:
+
+               clean_question = normalize_math_input(q.question)
+
+               print("Normalized Question:", clean_question)
+
+               truth = cached_ground_truth(clean_question)
+
+               if truth is None or not isinstance(truth, dict) or "answer" not in truth:
+                  return wrap_response(
                     "error",
                     "system",
                     {
@@ -489,20 +514,48 @@ async def solve_math_stream(q: Question):
 
         print("Problem type:", problem_type)
 
-        clean_question = normalize_math_input(q.question)
+        if problem_type == "concept":
 
-        print("Clean question:", clean_question)
+           print("CONCEPT QUESTION DETECTED")
 
-        truth = cached_ground_truth(clean_question)
+           concept_data = conceptBreak(
+           question=q.question,
+           client=client
+         )
 
-        if truth is None:
+           print("CONCEPT DATA:", concept_data)
+           #Safety check for concept_data
+           if not concept_data:
+             return wrap_response(
+             "error",
+             "system",
+             {
+                "reason": "Concept parsing failed"
+             }
+            )
+
+           truth = compute_ground_truth(
+           concept_data=concept_data
+         )
+
+        else:
+
+          clean_question = normalize_math_input(q.question)
+
+          print("Clean question:", clean_question)
+
+          truth = compute_ground_truth(
+          question=clean_question
+       )
+
+          if truth is None:
+
             return {
-                "type": "error",
-                "data": {
-                    "reason": "Invalid truth"
-                }
+           "type": "error",
+           "data": {
+             "reason": "Invalid truth"
             }
-
+            }
         route = build_prompt(
             problem_type,
             q.question,
