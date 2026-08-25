@@ -74,26 +74,59 @@ button:hover {
 /* =========================
    WHITEBOARD
 ========================= */
+
 #canvasPage {
     background: #ffffff;
+
+    /* IMPORTANT */
+    display: none;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
+#canvasPage.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* =========================
+   CANVAS WRAPPER
+========================= */
+
+#canvasWrapper {
+    width: 100%;
+    height: calc(100vh - 100px);
+
+    overflow-y: auto;
+    overflow-x: auto;
+
+    background: #ccc;
+
+    box-sizing: border-box;
+
+    padding: 20px;
+}
+
+/* =========================
+   CANVAS
+========================= */
+
 #board {
+    display: block;
+
+    width: 800px;
+
+    /*
+       IMPORTANT:
+       Do NOT give canvas a fixed CSS height.
+       JavaScript controls the real height.
+    */
+
+    height: auto;
+
     border: 2px solid #ddd;
     border-radius: 10px;
     background: white;
-    width: 900px;
-    height: 500px;
-}
-
-/* toolbar */
-.toolbar {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-}
-
-/* hidden helper */
-.hidden {
-    display: none;
 }

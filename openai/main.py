@@ -390,7 +390,8 @@ async def solve_math(q: Question):
         validation_result = validate_solution(
             problem=q.question,
             data=parsed_output,
-            truth=truth
+            truth=truth,
+            problem_type=problem_type
         )
 
         if validation_result["valid"]:
@@ -658,7 +659,8 @@ async def solve_math_stream(q: Question):
         validation_result = validate_solution(
             problem=q.question,
             data=parsed_output,
-            truth=truth
+            truth=truth,
+            problem_type=problem_type
         )
 
         print("VALIDATION RESULT:")
