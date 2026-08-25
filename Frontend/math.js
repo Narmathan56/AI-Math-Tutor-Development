@@ -251,39 +251,49 @@ function drawStepArrow(x, y) {
 // =========================
 // FINAL CANVAS DRAW
 // =========================
+
 function drawSolution(steps, answer) {
 
-    if (!ctx || !canvas) return;
+    if (!canvas || !ctx) return;
 
     clearCanvas();
 
-    const START_X = 30;
-    const START_Y = 40;
-    const MAX_WIDTH = canvas.width - 60;
+    const START_X = 40;
+    const START_Y = 50;
 
-    const FONT_SIZE = 18;
-    const LINE_HEIGHT = 28;
-    const ARROW_GAP = 12;
-    const ARROW_HEIGHT = 25;
-    const STEP_GAP = 15;
+    const FONT_SIZE = 20;
+    const LINE_HEIGHT = 30;
+
+    const ARROW_HEIGHT = 45;
+    const ARROW_GAP = 15;
+
+    const STEP_GAP = 35;
+
+    const MAX_WIDTH = canvas.width - 80;
+
+    // ---------------------------------
+    // FONT
+    // ---------------------------------
 
     ctx.font = `${FONT_SIZE}px Arial`;
     ctx.fillStyle = "black";
     ctx.lineWidth = 2;
 
-    // =========================
-    // TEXT WRAPPING
-    // =========================
+    // ---------------------------------
+    // WRAP TEXT
+    // ---------------------------------
+
     function wrapText(text, x, y, maxWidth) {
 
         const words = String(text).split(" ");
+
         let line = "";
         let currentY = y;
 
-        for (let i = 0; i < words.length; i++) {
+        for (const word of words) {
 
             const testLine =
-                line + (line ? " " : "") + words[i];
+                line + (line ? " " : "") + word;
 
             const width = ctx.measureText(testLine).width;
 
@@ -291,7 +301,8 @@ function drawSolution(steps, answer) {
 
                 ctx.fillText(line, x, currentY);
 
-                line = words[i];
+                line = word;
+
                 currentY += LINE_HEIGHT;
 
             } else {
@@ -307,24 +318,104 @@ function drawSolution(steps, answer) {
         return currentY;
     }
 
-    // =========================
-    // ARROW
-    // =========================
+    // ---------------------------------
+    // CALCULATE HEIGHT
+    // ---------------------------------
+
+    let requiredHeight = START_Y;
+
+    for (const step of (steps || [])) {
+
+        // Prefer expression for mathematical steps
+        const text = cleanExpression(
+            step.expression ||
+            step.text ||
+            ""
+        );
+
+        const words = text.split(" ");
+
+        let line = "";
+        let lines = 1;
+
+        for (const word of words) {
+
+            const testLine =
+                line + (line ? " " : "") + word;
+
+            if (
+                ctx.measureText(testLine).width >
+                MAX_WIDTH
+            ) {
+
+                lines++;
+
+                line = word;
+
+            } else {
+
+                line = testLine;
+            }
+        }
+
+        requiredHeight +=
+            (lines * LINE_HEIGHT) +
+            STEP_GAP;
+
+        // Arrow space
+        if (step !== steps[steps.length - 1]) {
+
+            requiredHeight +=
+                ARROW_GAP +
+                ARROW_HEIGHT +
+                STEP_GAP;
+        }
+    }
+
+    // Final answer
+    requiredHeight += 100;
+
+    // ---------------------------------
+    // RESIZE CANVAS
+    // ---------------------------------
+
+    canvas.height = Math.max(
+        500,
+        requiredHeight
+    );
+
+    // IMPORTANT:
+    // resizing canvas resets context
+    ctx = canvas.getContext("2d");
+
+    ctx.font = `${FONT_SIZE}px Arial`;
+    ctx.fillStyle = "black";
+    ctx.lineWidth = 2;
+
+    // ---------------------------------
+    // DRAW ARROW
+    // ---------------------------------
+
     function drawStepArrow(x, y) {
 
         ctx.beginPath();
 
         // vertical line
         ctx.moveTo(x, y);
-        ctx.lineTo(x, y + ARROW_HEIGHT - 6);
+
+        ctx.lineTo(
+            x,
+            y + ARROW_HEIGHT - 10
+        );
+
         ctx.stroke();
 
         // arrow head
         ctx.beginPath();
 
         ctx.moveTo(
-            x - 6,
-            y + ARROW_HEIGHT - 10
+            x - 7,
+            y + ARROW_HEIGHT - 18
         );
 
         ctx.lineTo(
@@ -333,16 +424,16 @@ function drawSolution(steps, answer) {
         );
 
         ctx.lineTo(
-            x + 6,
-            y + ARROW_HEIGHT - 10
+            x + 7,
+            y + ARROW_HEIGHT - 18
         );
 
         ctx.stroke();
     }
 
-    // =========================
+    // ---------------------------------
     // DRAW STEPS
-    // =========================
+    // ---------------------------------
 
     let y = START_Y;
 
@@ -350,18 +441,13 @@ function drawSolution(steps, answer) {
 
         const step = steps[i];
 
-       const expression = cleanExpression(
-        step.expression ||
-        step.text ||
-        ""
-    );
+        const expression = cleanExpression(
+            step.expression ||
+            step.text ||
+            ""
+        );
 
-        // Don't overflow canvas
-        if (y > canvas.height - 80) {
-            break;
-        }
-
-        // Draw expression
+        // Draw step
         y = wrapText(
             expression,
             START_X,
@@ -369,47 +455,42 @@ function drawSolution(steps, answer) {
             MAX_WIDTH
         );
 
-        // =========================
-        // ARROW TO NEXT STEP
-        // =========================
+        // Space after text
+        y += STEP_GAP;
 
+        // Arrow
         if (i < steps.length - 1) {
 
-            y += ARROW_GAP;
-
             drawStepArrow(
-                START_X + 15,
+                START_X + 20,
                 y
             );
 
-            y += ARROW_HEIGHT + STEP_GAP;
+            y += ARROW_HEIGHT + ARROW_GAP;
         }
     }
 
-    // =========================
+    // ---------------------------------
     // FINAL ANSWER
-    // =========================
+    // ---------------------------------
 
-    if (y < canvas.height - 50) {
+    y += 20;
 
-        y += 10;
+    ctx.font = "bold 22px Arial";
 
-        ctx.font = "bold 18px Arial";
+    ctx.fillText(
+        "Answer:",
+        START_X,
+        y
+    );
 
-        ctx.fillText(
-            "Answer:",
-            START_X,
-            y
-        );
+    y += 35;
 
-        y += LINE_HEIGHT;
+    ctx.font = "22px Arial";
 
-        ctx.font = "18px Arial";
-
-        ctx.fillText(
-            String(answer),
-            START_X,
-            y
-        );
-    }
+    ctx.fillText(
+        String(answer),
+        START_X,
+        y
+    );
 }

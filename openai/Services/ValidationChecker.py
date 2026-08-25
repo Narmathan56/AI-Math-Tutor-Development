@@ -359,6 +359,17 @@ def validate_steps(steps):
 # =========================
 # MAIN VALIDATOR
 # =========================
+
+STEP_VALIDATION_TYPES = {
+    "algebra",
+    "equation",
+    "polynomial",
+    "simplification",
+    "differentiation",
+    "integration",
+    "expression"
+}
+
 def validate_solution(problem, data, truth, problem_type=None):
     try:
 
@@ -395,10 +406,14 @@ def validate_solution(problem, data, truth, problem_type=None):
         # STEP VALIDATION
         # =========================
 
-        step_results = validate_steps(steps)
+        print("Problem Type:", problem_type)
+        step_results = []
 
-        print("STEP VALIDATION:", step_results)
-
+        if problem_type in STEP_VALIDATION_TYPES:
+            print("Running step validation")
+            step_results = validate_steps(steps)
+        else:
+            print("Skipping step validation")
         # =========================
         # NORMALIZE ANSWERS
         # =========================
