@@ -19,6 +19,9 @@ function openChat() {
 let canvas = null;
 let ctx = null;
 let drawing = false;
+let animationVersion = 0;
+let pendingAnimation = null;
+let tutorRequestVersion = 0;
 
 // streaming buffer
 let liveText = "";
@@ -55,7 +58,7 @@ function cleanExpression(expr) {
 // DRAW FUNCTIONS
 // =========================
 function startDraw(e) {
-    if (!ctx) return;
+    if (!ctx || pendingAnimation) return;
 
     drawing = true;
     ctx.beginPath();
@@ -80,6 +83,7 @@ function stopDraw() {
 // CLEAR CANVAS
 // =========================
 function clearCanvas() {
+    cancelWhiteboardAnimation();
     if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
@@ -136,6 +140,8 @@ async function askTutor() {
 
     if (!question) return;
 
+    const requestVersion = ++tutorRequestVersion;
+    clearCanvas();
     liveText = "";
     replyText.innerHTML = "";
     container.classList.remove("hidden");
@@ -154,6 +160,10 @@ async function askTutor() {
 
         while (true) {
             const { value, done } = await reader.read();
+            if (requestVersion !== tutorRequestVersion) {
+                await reader.cancel();
+                return;
+            }
             if (done) break;
 
             buffer += decoder.decode(value, { stream: true });
@@ -212,9 +222,8 @@ async function askTutor() {
 
     // canvas display (clean)
  
-    drawSolution(data.steps, answer);
-
     openWhiteboard();
+    await drawSolution(data.steps, answer);
 }
 
                 } catch (e) {
@@ -224,6 +233,7 @@ async function askTutor() {
         }
 
     } catch (err) {
+        if (requestVersion !== tutorRequestVersion) return;
         console.error(err);
         replyText.innerHTML = "Backend streaming error";
     }
@@ -246,251 +256,169 @@ function drawStepArrow(x, y) {
 }
 
 
+function cancelWhiteboardAnimation() {
+    animationVersion++;
+    drawing = false;
+    if (pendingAnimation) {
+        cancelAnimationFrame(pendingAnimation.id);
+        const finish = pendingAnimation.finish;
+        pendingAnimation = null;
+        finish(false);
+    }
+}
 
-    
-// =========================
-// FINAL CANVAS DRAW
-// =========================
+// Resolve false when cancelled so an awaiting drawing loop can stop too.
+function animateUnderline(x, y, width, color = "#2563eb", version = animationVersion) {
+    return new Promise((resolve) => {
+        if (version !== animationVersion || !ctx) {
+            resolve(false);
+            return;
+        }
 
-function drawSolution(steps, answer) {
+        const duration = 600;
+        let startTime;
+        let previousX = x;
+        const animation = { id: null, finish: resolve };
+        pendingAnimation = animation;
 
+        function frame(time) {
+            if (version !== animationVersion) {
+                if (pendingAnimation === animation) pendingAnimation = null;
+                resolve(false);
+                return;
+            }
+            if (startTime === undefined) startTime = time;
+            const progress = Math.min((time - startTime) / duration, 1);
+            const nextX = x + width * progress;
+
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(previousX, y);
+            ctx.lineTo(nextX, y);
+            ctx.stroke();
+            ctx.restore();
+            previousX = nextX;
+
+            if (progress < 1) {
+                animation.id = requestAnimationFrame(frame);
+            } else {
+                pendingAnimation = null;
+                resolve(true);
+            }
+        }
+
+        animation.id = requestAnimationFrame(frame);
+    });
+}
+
+// Measure first, then draw the same lines so highlights match wrapped text.
+function getWhiteboardLines(text, maxWidth) {
+    const lines = [];
+    for (const paragraph of String(text).split("\n")) {
+        let line = "";
+        for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+            const candidate = line ? line + " " + word : word;
+            if (line && ctx.measureText(candidate).width > maxWidth) {
+                lines.push(line);
+                line = "";
+            }
+            // Split oversized expressions rather than clipping them at the edge.
+            for (const character of (line ? " " : "") + word) {
+                if (line && ctx.measureText(line + character).width > maxWidth) {
+                    lines.push(line);
+                    line = "";
+                }
+                line += character;
+            }
+        }
+        lines.push(line);
+    }
+    return lines;
+}
+
+async function drawSolution(steps, answer) {
     if (!canvas || !ctx) return;
-
     clearCanvas();
+    const version = animationVersion;
+    const startX = 40;
+    const lineHeight = 34;
+    const maxWidth = canvas.width - 80;
+    const stepFont = "20px Arial";
+    const answerFont = "bold 22px Arial";
 
-    const START_X = 40;
-    const START_Y = 50;
+    ctx.font = stepFont;
+    const layout = (Array.isArray(steps) ? steps : []).map((step) => ({
+        lines: getWhiteboardLines(
+            cleanExpression(step.expression || step.text || ""), maxWidth
+        ),
+        color: step.emphasis === "key" ? "#b45309" : "#2563eb"
+    }));
+    ctx.font = answerFont;
+    const answerLines = getWhiteboardLines(cleanExpression(answer ?? ""), maxWidth);
+    const requiredHeight = 50
+        + layout.reduce((height, step) => height + step.lines.length * lineHeight + 60, 0)
+        + 40 + answerLines.length * lineHeight + 40;
 
-    const FONT_SIZE = 20;
-    const LINE_HEIGHT = 30;
-
-    const ARROW_HEIGHT = 45;
-    const ARROW_GAP = 15;
-
-    const STEP_GAP = 35;
-
-    const MAX_WIDTH = canvas.width - 80;
-
-    // ---------------------------------
-    // FONT
-    // ---------------------------------
-
-    ctx.font = `${FONT_SIZE}px Arial`;
-    ctx.fillStyle = "black";
+    // Resizing clears the canvas and resets all context styles.
+    canvas.height = Math.max(500, requiredHeight);
+    ctx.font = stepFont;
+    ctx.fillStyle = "#172033";
+    ctx.strokeStyle = "#64748b";
     ctx.lineWidth = 2;
 
-    // ---------------------------------
-    // WRAP TEXT
-    // ---------------------------------
-
-    function wrapText(text, x, y, maxWidth) {
-
-        const words = String(text).split(" ");
-
-        let line = "";
-        let currentY = y;
-
-        for (const word of words) {
-
-            const testLine =
-                line + (line ? " " : "") + word;
-
-            const width = ctx.measureText(testLine).width;
-
-            if (width > maxWidth && line !== "") {
-
-                ctx.fillText(line, x, currentY);
-
-                line = word;
-
-                currentY += LINE_HEIGHT;
-
-            } else {
-
-                line = testLine;
-            }
-        }
-
-        if (line) {
-            ctx.fillText(line, x, currentY);
-        }
-
-        return currentY;
-    }
-
-    // ---------------------------------
-    // CALCULATE HEIGHT
-    // ---------------------------------
-
-    let requiredHeight = START_Y;
-
-    for (const step of (steps || [])) {
-
-        // Prefer expression for mathematical steps
-        const text = cleanExpression(
-            step.expression ||
-            step.text ||
-            ""
-        );
-
-        const words = text.split(" ");
-
-        let line = "";
-        let lines = 1;
-
-        for (const word of words) {
-
-            const testLine =
-                line + (line ? " " : "") + word;
-
-            if (
-                ctx.measureText(testLine).width >
-                MAX_WIDTH
-            ) {
-
-                lines++;
-
-                line = word;
-
-            } else {
-
-                line = testLine;
-            }
-        }
-
-        requiredHeight +=
-            (lines * LINE_HEIGHT) +
-            STEP_GAP;
-
-        // Arrow space
-        if (step !== steps[steps.length - 1]) {
-
-            requiredHeight +=
-                ARROW_GAP +
-                ARROW_HEIGHT +
-                STEP_GAP;
+    const wrapper = document.getElementById("canvasWrapper");
+    if (wrapper) wrapper.scrollTop = 0;
+    function reveal(y) {
+        if (!wrapper || !canvas.clientHeight) return;
+        const scale = canvas.clientHeight / canvas.height;
+        const bottom = canvas.offsetTop - wrapper.offsetTop + (y + 24) * scale;
+        if (bottom > wrapper.scrollTop + wrapper.clientHeight) {
+            wrapper.scrollTop = bottom - wrapper.clientHeight + 24;
         }
     }
 
-    // Final answer
-    requiredHeight += 100;
-
-    // ---------------------------------
-    // RESIZE CANVAS
-    // ---------------------------------
-
-    canvas.height = Math.max(
-        500,
-        requiredHeight
-    );
-
-    // IMPORTANT:
-    // resizing canvas resets context
-    ctx = canvas.getContext("2d");
-
-    ctx.font = `${FONT_SIZE}px Arial`;
-    ctx.fillStyle = "black";
-    ctx.lineWidth = 2;
-
-    // ---------------------------------
-    // DRAW ARROW
-    // ---------------------------------
-
-    function drawStepArrow(x, y) {
-
-        ctx.beginPath();
-
-        // vertical line
-        ctx.moveTo(x, y);
-
-        ctx.lineTo(
-            x,
-            y + ARROW_HEIGHT - 10
-        );
-
-        ctx.stroke();
-
-        // arrow head
-        ctx.beginPath();
-
-        ctx.moveTo(
-            x - 7,
-            y + ARROW_HEIGHT - 18
-        );
-
-        ctx.lineTo(
-            x,
-            y + ARROW_HEIGHT
-        );
-
-        ctx.lineTo(
-            x + 7,
-            y + ARROW_HEIGHT - 18
-        );
-
-        ctx.stroke();
-    }
-
-    // ---------------------------------
-    // DRAW STEPS
-    // ---------------------------------
-
-    let y = START_Y;
-
-    for (let i = 0; i < (steps || []).length; i++) {
-
-        const step = steps[i];
-
-        const expression = cleanExpression(
-            step.expression ||
-            step.text ||
-            ""
-        );
-
-        // Draw step
-        y = wrapText(
-            expression,
-            START_X,
-            y,
-            MAX_WIDTH
-        );
-
-        // Space after text
-        y += STEP_GAP;
-
-        // Arrow
-        if (i < steps.length - 1) {
-
-            drawStepArrow(
-                START_X + 20,
-                y
+    let y = 50;
+    for (let index = 0; index < layout.length; index++) {
+        if (version !== animationVersion) return;
+        const step = layout[index];
+        ctx.font = stepFont;
+        const firstY = y;
+        for (const line of step.lines) {
+            ctx.fillText(line, startX, y);
+            y += lineHeight;
+        }
+        reveal(y);
+        for (let lineIndex = 0; lineIndex < step.lines.length; lineIndex++) {
+            const finished = await animateUnderline(
+                startX, firstY + lineIndex * lineHeight + 8,
+                ctx.measureText(step.lines[lineIndex]).width,
+                step.color, version
             );
-
-            y += ARROW_HEIGHT + ARROW_GAP;
+            if (!finished || version !== animationVersion) return;
         }
+
+        if (index < layout.length - 1) drawStepArrow(startX + 20, y + 5);
+        y += 60;
     }
 
-    // ---------------------------------
-    // FINAL ANSWER
-    // ---------------------------------
-
-    y += 20;
-
-    ctx.font = "bold 22px Arial";
-
-    ctx.fillText(
-        "Answer:",
-        START_X,
-        y
-    );
-
-    y += 35;
-
-    ctx.font = "22px Arial";
-
-    ctx.fillText(
-        String(answer),
-        START_X,
-        y
-    );
+    if (version !== animationVersion) return;
+    ctx.font = answerFont;
+    ctx.fillText("Answer:", startX, y);
+    y += 40;
+    for (const line of answerLines) {
+        const width = ctx.measureText(line).width;
+        // Paint the background first, then the readable answer above it.
+        ctx.fillStyle = "#dcfce7";
+        ctx.fillRect(startX - 8, y - 25, width + 16, lineHeight);
+        ctx.fillStyle = "#166534";
+        ctx.fillText(line, startX, y);
+        reveal(y);
+        const finished = await animateUnderline(startX, y + 8, width, "#16a34a", version);
+        if (!finished || version !== animationVersion) return;
+        y += lineHeight;
+    }
+    ctx.fillStyle = "#172033";
 }
