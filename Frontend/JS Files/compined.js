@@ -20,6 +20,17 @@ function renderVisual(instructions) {
                     instruction.height
                 );
                 break;
+            case "square":
+                drawSquare(instruction.x, instruction.y, instruction.size);
+                break;
+            case "line":
+                drawLine(
+                    instruction.x1,
+                    instruction.y1,
+                    instruction.x2,
+                    instruction.y2
+                );
+                break;    
         }
     });
 }
