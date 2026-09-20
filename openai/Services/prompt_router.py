@@ -1,4 +1,4 @@
-from Services.Load_Model import get_client
+from Services.Load_Model import get_model
 import json
 import re
 
@@ -188,12 +188,12 @@ Question:
 Return ONLY valid JSON.
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
+    response = client.chat.completions.create(
+        model=get_model(),
+        messages=[{"role": "user", "content": prompt}],
     )
 
-    raw = response.text.strip()
+    raw = (response.choices[0].message.content or "").strip()
 
     print("===== CONCEPT RAW RESPONSE =====")
     print(repr(raw))

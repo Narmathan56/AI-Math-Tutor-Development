@@ -8,12 +8,12 @@ import re
 import time
 
 from dotenv import load_dotenv
-from google import genai
+
 from torch import full
 from Services.ValidationChecker import validate_solution,normalize_math_input,solve,compute_ground_truth,compare_answers, parse_answers, validate_transition
 from Services.problemTypeDetector import classify,is_follow_up
 from Services.prompt_router import build_prompt, conceptBreak
-from Services.Load_Model import stream_gemini, get_client
+from Services.Load_Model import stream_tutor, get_client
 from Services.memory import MemoryManager
 from functools import lru_cache
 import json
@@ -22,7 +22,7 @@ load_dotenv()
 
 memory_manager = MemoryManager()
 
-client = genai.Client(api_key=os.getenv("OPEN_API_KEY"))
+client = get_client()
 
 app = FastAPI()
 
@@ -327,7 +327,7 @@ async def solve_math(q: Question):
 
         TOTAL_REQUESTS += 1
 
-        llama_output = stream_gemini(route)
+        llama_output = "".join(stream_tutor(route))
 
         if not llama_output or llama_output.strip() == "":
             return wrap_response(
@@ -468,7 +468,7 @@ class Question(BaseModel):
 # from Services.problemTypeDetector import classify
 # from Services.ValidationChecker import cached_ground_truth
 # from Services.prompt_router import build_prompt
-# from Services.Load_Model import stream_gemini
+# from Services.Load_Model import stream_tutor
 
 
 @app.post("/solve_math_stream")
@@ -574,7 +574,7 @@ async def solve_math_stream(q: Question):
 
         try:
 
-            for token in stream_gemini(route):
+            for token in stream_tutor(route):
 
                 if not token:
                     continue
