@@ -18,10 +18,15 @@ function openChat() {
 // =========================
 let canvas = null;
 let ctx = null;
+let whiteboardSteps= [];
 let drawing = false;
 let animationVersion = 0;
 let pendingAnimation = null;
 let tutorRequestVersion = 0;
+let selectionMode = false;
+let selectedStepId =null;
+let currentSolutionId = null;
+let stepContextRequest = null;
 
 // streaming buffer
 let liveText = "";
@@ -43,6 +48,7 @@ window.addEventListener("DOMContentLoaded", () => {
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stopDraw);
     canvas.addEventListener("mouseleave", stopDraw);
+    canvas.addEventListener("click", selectStep);
 });
 
 
@@ -58,11 +64,120 @@ function cleanExpression(expr) {
 // DRAW FUNCTIONS
 // =========================
 function startDraw(e) {
-    if (!ctx || pendingAnimation) return;
+    if (!ctx || pendingAnimation || selectionMode) return;
 
     drawing = true;
     ctx.beginPath();
     ctx.moveTo(e.offsetX, e.offsetY);
+}
+
+//click handler
+function  selectStep(event) {
+    if (!selectionMode || pendingAnimation || !ctx) return;
+
+    //convert the mouse  position into  canvas coordinates.
+    const rect = canvas.getBoundingClientRect();
+    // This is the customization of the rectangle
+    const x = (event.clientX - rect.left - canvas.clientLeft)
+    * canvas.width / canvas.clientWidth;
+    const y = (event.clientY - rect.top - canvas.clientTop)
+    * canvas.height / canvas.clientHeight;
+
+    const selectedStep= whiteboardSteps.find(step => {
+        const bounds = step.bounds;
+
+        return x >= bounds. x && x<=bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height;
+
+    });
+
+    showSelectedStep(selectedStep);
+
+}
+
+function showSelectedStep(step) {
+    if (stepContextRequest) stepContextRequest.abort();
+    stepContextRequest = null;
+    selectedStepId = step ? step.id : null;
+
+    const info = document.getElementById("selectedStepInfo");
+    const button = document.getElementById("explainStepButton");
+    const explanation = document.getElementById("stepExplanation");
+
+    if (info) {
+        info.textContent = step
+            ? `${step.id}: ${step.expression || step.text}`
+            : "No step selected.";
+    }
+
+    if (button) button.disabled = !step;
+    if (explanation) explanation.textContent = "";
+}
+
+async function explainSelectedStep() {
+    const output = document.getElementById("stepExplanation");
+    const button = document.getElementById("explainStepButton");
+    if (!output) return;
+
+    if (!selectedStepId) {
+        output.textContent = "Select a step first.";
+        return;
+    }
+    if (!currentSolutionId) {
+        output.textContent = "Solve a question with Ask Tutor first. This whiteboard has no saved solution.";
+        return;
+    }
+
+    if (stepContextRequest) stepContextRequest.abort();
+    const controller = new AbortController();
+    stepContextRequest = controller;
+    const solutionId = currentSolutionId;
+    const stepId = selectedStepId;
+    const isCurrent = () => stepContextRequest === controller
+        && currentSolutionId === solutionId && selectedStepId === stepId;
+
+    if (button) button.disabled = true;
+    output.textContent = "Explaining this step...";
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/explain_step", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ solution_id: solutionId, step_id: stepId }),
+            signal: controller.signal
+        });
+        const context = await response.json();
+        if (!isCurrent()) return;
+
+        if (!response.ok) {
+            output.textContent = typeof context.detail === "string"
+                ? context.detail
+                : "Could not retrieve this step. Solve the question again and retry.";
+            return;
+        }
+
+        if (context.solution_id !== solutionId || context.step_id !== stepId
+            || typeof context.explanation !== "string") {
+            throw new Error("Unexpected explanation response");
+        }
+        output.textContent = context.explanation;
+    } catch (error) {
+        if (error.name !== "AbortError" && isCurrent()) {
+            output.textContent = "Could not load the step. Check that the backend is running and try again.";
+        }
+    } finally {
+        if (isCurrent()) {
+            stepContextRequest = null;
+            if (button) button.disabled = !selectedStepId;
+        }
+    }
+}
+function setSelectionMode(enabled) {
+    selectionMode = enabled;
+    stopDraw();
+    canvas.style.cursor = enabled ? "pointer" : "crosshair";
+    if(!enabled) {
+        showSelectedStep(null);
+    }
 }
 
 function draw(e) {
@@ -79,11 +194,28 @@ function stopDraw() {
     drawing = false;
 }
 
+function getSelectedStepContext() {
+    const index = whiteboardSteps.findIndex(
+        step => step.id === selectedStepId
+    );
+
+    if (index === -1) return null;
+
+    return {
+        current: whiteboardSteps[index],
+        previous: index > 0 ? whiteboardSteps[index - 1] : null
+    };
+}
+
+
 // =========================
 // CLEAR CANVAS
 // =========================
 function clearCanvas() {
+    currentSolutionId = null;
     cancelWhiteboardAnimation();
+    whiteboardSteps = [];
+    showSelectedStep(null);
     if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
@@ -221,9 +353,10 @@ async function askTutor() {
     replyText.innerHTML += `<br><b>Final Answer:</b> ${answer}`;
 
     // canvas display (clean)
+    
  
     openWhiteboard();
-    await drawSolution(data.steps, answer);
+    await drawSolution(data.steps, answer, chunk.solution_id ?? null);
 }
 
                 } catch (e) {
@@ -339,9 +472,10 @@ function getWhiteboardLines(text, maxWidth) {
     return lines;
 }
 
-async function drawSolution(steps, answer) {
+async function drawSolution(steps, answer, solutionId = null) {
     if (!canvas || !ctx) return;
     clearCanvas();
+    currentSolutionId = solutionId;
     const version = animationVersion;
     const startX = 40;
     const lineHeight = 34;
@@ -389,7 +523,21 @@ async function drawSolution(steps, answer) {
         for (const line of step.lines) {
             ctx.fillText(line, startX, y);
             y += lineHeight;
+
         }
+        const textWidth = Math.max(...step.lines.map(line => ctx.measureText(line).width));
+        whiteboardSteps.push({
+            id: `step-${index+1}`,
+            text: steps[index].text || "", 
+            expression: steps[index].expression || "",
+            bounds: {
+                x: startX - 8,
+                y: firstY - 24,
+                width: textWidth +16,
+                height: step.lines.length *lineHeight
+
+            }
+        });
         reveal(y);
         for (let lineIndex = 0; lineIndex < step.lines.length; lineIndex++) {
             const finished = await animateUnderline(

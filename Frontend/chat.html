@@ -1,4 +1,5 @@
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="chat.css">
     <script src="JS Files/illustations.js"></script>
     <script src="math.js"></script>
@@ -28,8 +29,24 @@
 <div id="canvasPage" class="page">
 
     <div class="toolbar">
-        <button onclick="clearCanvas()">Clear</button>
-        <button onclick="openChat()">Back to Chat</button>
+        <div class="whiteboard-heading">
+            <h2>Solution whiteboard</h2>
+            <p>Select a step to explore how it follows.</p>
+        </div>
+        <div class="whiteboard-controls">
+            <label class="step-select-control">
+                <input id="stepSelectionToggle" type="checkbox"
+                       onchange="setSelectionMode(this.checked)">
+                <span>Select a step</span>
+            </label>
+            <button id="explainStepButton" onclick="explainSelectedStep()" disabled>
+                Explain this step
+            </button>
+            <button class="secondary-button" onclick="clearCanvas()">Clear board</button>
+            <button class="secondary-button" onclick="openChat()">Back to chat</button>
+        </div>
+        <p id="selectedStepInfo" aria-live="polite">No step selected.</p>
+        <p id="stepExplanation" aria-live="polite"></p>
     </div>
     <div id="canvasWrapper">
     
