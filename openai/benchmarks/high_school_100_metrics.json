@@ -1,0 +1,75 @@
+{
+  "dataset_size": 100,
+  "total_scored": 100,
+  "missing_ids": [],
+  "raw_accuracy": 1.0,
+  "validation_accepted": 100,
+  "correct_accepted": 100,
+  "correct_rejected": 0,
+  "incorrect_accepted": 0,
+  "incorrect_rejected": 0,
+  "parse_errors": 0,
+  "incorrect_rejection_rate": null,
+  "by_topic": {
+    "order_of_operations": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "fractions": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "powers": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "linear": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "linear_brackets": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "linear_both_sides": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "fractional_linear": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "quadratic": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "repeated_root": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    },
+    "cubic": {
+      "correct_accepted": 10,
+      "correct_rejected": 0,
+      "incorrect_accepted": 0,
+      "incorrect_rejected": 0
+    }
+  }
+}

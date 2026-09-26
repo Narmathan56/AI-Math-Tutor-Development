@@ -1,0 +1,43 @@
+[
+  {
+    "id": "arithmetic_01",
+    "question": "2 + 2",
+    "expected": [4]
+  },
+  {
+    "id": "equation_01",
+    "question": "2*x + 3 = -7",
+    "expected": [-5]
+  },
+  {
+    "id":"multiplication_01",
+    "question":"3 * 4",
+    "expected":[12]
+  },
+  {
+    "id":"division_01",
+    "question":"10 / 2",
+    "expected":[5]
+  },
+  {
+    "id":"subtraction_01",
+    "question":"15 - 5",
+    "expected":[10]
+  },
+    {
+        "id":"exponentiation_01",
+        "question":"2^3",
+        "expected":[8]
+    },
+    {
+        "id":"concept_01",
+        "question":"(2 + 3) * 4",
+        "expected":[20]
+    },
+
+    {
+        "id": "arithmetic_02",
+        "question": "5 -17",
+        "expected": [-12]
+    }
+]

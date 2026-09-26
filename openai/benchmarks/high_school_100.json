@@ -1,0 +1,822 @@
+[
+  {
+    "id": "hs_order_of_operations_01",
+    "topic": "order_of_operations",
+    "question": "(4 - 2) * (1 + 4) + 1^2",
+    "expected": [
+      11.0
+    ]
+  },
+  {
+    "id": "hs_fractions_01",
+    "topic": "fractions",
+    "question": "1/4 + 2/2 - 3/8",
+    "expected": [
+      0.875
+    ]
+  },
+  {
+    "id": "hs_powers_01",
+    "topic": "powers",
+    "question": "(-1)^2 - 2^1 + (3)^0",
+    "expected": [
+      0.0
+    ]
+  },
+  {
+    "id": "hs_linear_01",
+    "topic": "linear",
+    "question": "2*x + 4 = -6",
+    "expected": [
+      -5.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_01",
+    "topic": "linear_brackets",
+    "question": "3*(x - 1) = -18",
+    "expected": [
+      -5.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_01",
+    "topic": "linear_both_sides",
+    "question": "4*x + 1 = 2*x + -9",
+    "expected": [
+      -5.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_01",
+    "topic": "fractional_linear",
+    "question": "(x + 1)/3 = (2*x - 1)/5 + 5/6",
+    "expected": [
+      -4.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_01",
+    "topic": "quadratic",
+    "question": "x^2 - x - 2 = 0",
+    "expected": [
+      -1.0,
+      2.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_01",
+    "topic": "repeated_root",
+    "question": "x^2 - 2*x + 1 = 0",
+    "expected": [
+      1.0
+    ]
+  },
+  {
+    "id": "hs_cubic_01",
+    "topic": "cubic",
+    "question": "x^3 - 1*x^2 - 1*x + 1 = 0",
+    "expected": [
+      -1.0,
+      1.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_02",
+    "topic": "order_of_operations",
+    "question": "(5 - 4) * (2 + 4) + 2^2",
+    "expected": [
+      10.0
+    ]
+  },
+  {
+    "id": "hs_fractions_02",
+    "topic": "fractions",
+    "question": "2/4 + 3/2 - 4/8",
+    "expected": [
+      1.5
+    ]
+  },
+  {
+    "id": "hs_powers_02",
+    "topic": "powers",
+    "question": "(-2)^2 - 2^2 + (4)^0",
+    "expected": [
+      1.0
+    ]
+  },
+  {
+    "id": "hs_linear_02",
+    "topic": "linear",
+    "question": "3*x + 5 = -7",
+    "expected": [
+      -4.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_02",
+    "topic": "linear_brackets",
+    "question": "4*(x - 2) = -24",
+    "expected": [
+      -4.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_02",
+    "topic": "linear_both_sides",
+    "question": "5*x + 2 = 2*x + -10",
+    "expected": [
+      -4.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_02",
+    "topic": "fractional_linear",
+    "question": "(x + 2)/3 = (2*x - 2)/5 + 13/10",
+    "expected": [
+      -3.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_02",
+    "topic": "quadratic",
+    "question": "x^2 - x - 6 = 0",
+    "expected": [
+      -2.0,
+      3.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_02",
+    "topic": "repeated_root",
+    "question": "x^2 - 4*x + 4 = 0",
+    "expected": [
+      2.0
+    ]
+  },
+  {
+    "id": "hs_cubic_02",
+    "topic": "cubic",
+    "question": "x^3 - 2*x^2 - 4*x + 8 = 0",
+    "expected": [
+      -2.0,
+      2.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_03",
+    "topic": "order_of_operations",
+    "question": "(6 - 6) * (3 + 4) + 3^2",
+    "expected": [
+      9.0
+    ]
+  },
+  {
+    "id": "hs_fractions_03",
+    "topic": "fractions",
+    "question": "3/4 + 4/2 - 5/8",
+    "expected": [
+      2.125
+    ]
+  },
+  {
+    "id": "hs_powers_03",
+    "topic": "powers",
+    "question": "(-3)^2 - 2^3 + (5)^0",
+    "expected": [
+      2.0
+    ]
+  },
+  {
+    "id": "hs_linear_03",
+    "topic": "linear",
+    "question": "4*x + 6 = -6",
+    "expected": [
+      -3.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_03",
+    "topic": "linear_brackets",
+    "question": "5*(x - 3) = -30",
+    "expected": [
+      -3.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_03",
+    "topic": "linear_both_sides",
+    "question": "6*x + 3 = 2*x + -9",
+    "expected": [
+      -3.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_03",
+    "topic": "fractional_linear",
+    "question": "(x + 3)/3 = (2*x - 3)/5 + 53/30",
+    "expected": [
+      -2.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_03",
+    "topic": "quadratic",
+    "question": "x^2 - x - 12 = 0",
+    "expected": [
+      -3.0,
+      4.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_03",
+    "topic": "repeated_root",
+    "question": "x^2 - 6*x + 9 = 0",
+    "expected": [
+      3.0
+    ]
+  },
+  {
+    "id": "hs_cubic_03",
+    "topic": "cubic",
+    "question": "x^3 - 3*x^2 - 9*x + 27 = 0",
+    "expected": [
+      -3.0,
+      3.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_04",
+    "topic": "order_of_operations",
+    "question": "(7 - 8) * (4 + 4) + 4^2",
+    "expected": [
+      8.0
+    ]
+  },
+  {
+    "id": "hs_fractions_04",
+    "topic": "fractions",
+    "question": "4/4 + 5/2 - 6/8",
+    "expected": [
+      2.75
+    ]
+  },
+  {
+    "id": "hs_powers_04",
+    "topic": "powers",
+    "question": "(-4)^2 - 2^4 + (6)^0",
+    "expected": [
+      1.0
+    ]
+  },
+  {
+    "id": "hs_linear_04",
+    "topic": "linear",
+    "question": "5*x + 7 = -3",
+    "expected": [
+      -2.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_04",
+    "topic": "linear_brackets",
+    "question": "6*(x - 4) = -36",
+    "expected": [
+      -2.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_04",
+    "topic": "linear_both_sides",
+    "question": "7*x + 4 = 2*x + -6",
+    "expected": [
+      -2.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_04",
+    "topic": "fractional_linear",
+    "question": "(x + 4)/3 = (2*x - 4)/5 + 67/30",
+    "expected": [
+      -1.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_04",
+    "topic": "quadratic",
+    "question": "x^2 - x - 20 = 0",
+    "expected": [
+      -4.0,
+      5.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_04",
+    "topic": "repeated_root",
+    "question": "x^2 - 8*x + 16 = 0",
+    "expected": [
+      4.0
+    ]
+  },
+  {
+    "id": "hs_cubic_04",
+    "topic": "cubic",
+    "question": "x^3 - 4*x^2 - 16*x + 64 = 0",
+    "expected": [
+      -4.0,
+      4.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_05",
+    "topic": "order_of_operations",
+    "question": "(8 - 10) * (5 + 4) + 5^2",
+    "expected": [
+      7.0
+    ]
+  },
+  {
+    "id": "hs_fractions_05",
+    "topic": "fractions",
+    "question": "5/4 + 6/2 - 7/8",
+    "expected": [
+      3.375
+    ]
+  },
+  {
+    "id": "hs_powers_05",
+    "topic": "powers",
+    "question": "(-5)^2 - 2^5 + (7)^0",
+    "expected": [
+      -6.0
+    ]
+  },
+  {
+    "id": "hs_linear_05",
+    "topic": "linear",
+    "question": "6*x + 8 = 2",
+    "expected": [
+      -1.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_05",
+    "topic": "linear_brackets",
+    "question": "7*(x - 5) = -42",
+    "expected": [
+      -1.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_05",
+    "topic": "linear_both_sides",
+    "question": "8*x + 5 = 2*x + -1",
+    "expected": [
+      -1.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_05",
+    "topic": "fractional_linear",
+    "question": "(x + 5)/3 = (2*x - 5)/5 + 27/10",
+    "expected": [
+      -0.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_05",
+    "topic": "quadratic",
+    "question": "x^2 - x - 30 = 0",
+    "expected": [
+      -5.0,
+      6.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_05",
+    "topic": "repeated_root",
+    "question": "x^2 - 10*x + 25 = 0",
+    "expected": [
+      5.0
+    ]
+  },
+  {
+    "id": "hs_cubic_05",
+    "topic": "cubic",
+    "question": "x^3 - 5*x^2 - 25*x + 125 = 0",
+    "expected": [
+      -5.0,
+      5.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_06",
+    "topic": "order_of_operations",
+    "question": "(9 - 12) * (6 + 4) + 6^2",
+    "expected": [
+      6.0
+    ]
+  },
+  {
+    "id": "hs_fractions_06",
+    "topic": "fractions",
+    "question": "6/4 + 7/2 - 8/8",
+    "expected": [
+      4.0
+    ]
+  },
+  {
+    "id": "hs_powers_06",
+    "topic": "powers",
+    "question": "(-6)^2 - 2^6 + (8)^0",
+    "expected": [
+      -27.0
+    ]
+  },
+  {
+    "id": "hs_linear_06",
+    "topic": "linear",
+    "question": "7*x + 9 = 9",
+    "expected": [
+      0.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_06",
+    "topic": "linear_brackets",
+    "question": "8*(x - 6) = -48",
+    "expected": [
+      0.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_06",
+    "topic": "linear_both_sides",
+    "question": "9*x + 6 = 2*x + 6",
+    "expected": [
+      0.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_06",
+    "topic": "fractional_linear",
+    "question": "(x + 6)/3 = (2*x - 6)/5 + 19/6",
+    "expected": [
+      0.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_06",
+    "topic": "quadratic",
+    "question": "x^2 - x - 42 = 0",
+    "expected": [
+      -6.0,
+      7.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_06",
+    "topic": "repeated_root",
+    "question": "x^2 - 12*x + 36 = 0",
+    "expected": [
+      6.0
+    ]
+  },
+  {
+    "id": "hs_cubic_06",
+    "topic": "cubic",
+    "question": "x^3 - 6*x^2 - 36*x + 216 = 0",
+    "expected": [
+      -6.0,
+      6.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_07",
+    "topic": "order_of_operations",
+    "question": "(10 - 14) * (7 + 4) + 7^2",
+    "expected": [
+      5.0
+    ]
+  },
+  {
+    "id": "hs_fractions_07",
+    "topic": "fractions",
+    "question": "7/4 + 8/2 - 9/8",
+    "expected": [
+      4.625
+    ]
+  },
+  {
+    "id": "hs_powers_07",
+    "topic": "powers",
+    "question": "(-7)^2 - 2^7 + (9)^0",
+    "expected": [
+      -78.0
+    ]
+  },
+  {
+    "id": "hs_linear_07",
+    "topic": "linear",
+    "question": "8*x + 10 = 18",
+    "expected": [
+      1.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_07",
+    "topic": "linear_brackets",
+    "question": "9*(x - 7) = -54",
+    "expected": [
+      1.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_07",
+    "topic": "linear_both_sides",
+    "question": "10*x + 7 = 2*x + 15",
+    "expected": [
+      1.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_07",
+    "topic": "fractional_linear",
+    "question": "(x + 7)/3 = (2*x - 7)/5 + 109/30",
+    "expected": [
+      1.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_07",
+    "topic": "quadratic",
+    "question": "x^2 - x - 56 = 0",
+    "expected": [
+      -7.0,
+      8.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_07",
+    "topic": "repeated_root",
+    "question": "x^2 - 14*x + 49 = 0",
+    "expected": [
+      7.0
+    ]
+  },
+  {
+    "id": "hs_cubic_07",
+    "topic": "cubic",
+    "question": "x^3 - 7*x^2 - 49*x + 343 = 0",
+    "expected": [
+      -7.0,
+      7.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_08",
+    "topic": "order_of_operations",
+    "question": "(11 - 16) * (8 + 4) + 8^2",
+    "expected": [
+      4.0
+    ]
+  },
+  {
+    "id": "hs_fractions_08",
+    "topic": "fractions",
+    "question": "8/4 + 9/2 - 10/8",
+    "expected": [
+      5.25
+    ]
+  },
+  {
+    "id": "hs_powers_08",
+    "topic": "powers",
+    "question": "(-8)^2 - 2^8 + (10)^0",
+    "expected": [
+      -191.0
+    ]
+  },
+  {
+    "id": "hs_linear_08",
+    "topic": "linear",
+    "question": "9*x + 11 = 29",
+    "expected": [
+      2.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_08",
+    "topic": "linear_brackets",
+    "question": "10*(x - 8) = -60",
+    "expected": [
+      2.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_08",
+    "topic": "linear_both_sides",
+    "question": "11*x + 8 = 2*x + 26",
+    "expected": [
+      2.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_08",
+    "topic": "fractional_linear",
+    "question": "(x + 8)/3 = (2*x - 8)/5 + 41/10",
+    "expected": [
+      2.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_08",
+    "topic": "quadratic",
+    "question": "x^2 - x - 72 = 0",
+    "expected": [
+      -8.0,
+      9.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_08",
+    "topic": "repeated_root",
+    "question": "x^2 - 16*x + 64 = 0",
+    "expected": [
+      8.0
+    ]
+  },
+  {
+    "id": "hs_cubic_08",
+    "topic": "cubic",
+    "question": "x^3 - 8*x^2 - 64*x + 512 = 0",
+    "expected": [
+      -8.0,
+      8.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_09",
+    "topic": "order_of_operations",
+    "question": "(12 - 18) * (9 + 4) + 9^2",
+    "expected": [
+      3.0
+    ]
+  },
+  {
+    "id": "hs_fractions_09",
+    "topic": "fractions",
+    "question": "9/4 + 10/2 - 11/8",
+    "expected": [
+      5.875
+    ]
+  },
+  {
+    "id": "hs_powers_09",
+    "topic": "powers",
+    "question": "(-9)^2 - 2^9 + (11)^0",
+    "expected": [
+      -430.0
+    ]
+  },
+  {
+    "id": "hs_linear_09",
+    "topic": "linear",
+    "question": "10*x + 12 = 42",
+    "expected": [
+      3.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_09",
+    "topic": "linear_brackets",
+    "question": "11*(x - 9) = -66",
+    "expected": [
+      3.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_09",
+    "topic": "linear_both_sides",
+    "question": "12*x + 9 = 2*x + 39",
+    "expected": [
+      3.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_09",
+    "topic": "fractional_linear",
+    "question": "(x + 9)/3 = (2*x - 9)/5 + 137/30",
+    "expected": [
+      3.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_09",
+    "topic": "quadratic",
+    "question": "x^2 - x - 90 = 0",
+    "expected": [
+      -9.0,
+      10.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_09",
+    "topic": "repeated_root",
+    "question": "x^2 - 18*x + 81 = 0",
+    "expected": [
+      9.0
+    ]
+  },
+  {
+    "id": "hs_cubic_09",
+    "topic": "cubic",
+    "question": "x^3 - 9*x^2 - 81*x + 729 = 0",
+    "expected": [
+      -9.0,
+      9.0
+    ]
+  },
+  {
+    "id": "hs_order_of_operations_10",
+    "topic": "order_of_operations",
+    "question": "(13 - 20) * (10 + 4) + 10^2",
+    "expected": [
+      2.0
+    ]
+  },
+  {
+    "id": "hs_fractions_10",
+    "topic": "fractions",
+    "question": "10/4 + 11/2 - 12/8",
+    "expected": [
+      6.5
+    ]
+  },
+  {
+    "id": "hs_powers_10",
+    "topic": "powers",
+    "question": "(-10)^2 - 2^10 + (12)^0",
+    "expected": [
+      -923.0
+    ]
+  },
+  {
+    "id": "hs_linear_10",
+    "topic": "linear",
+    "question": "11*x + 13 = 57",
+    "expected": [
+      4.0
+    ]
+  },
+  {
+    "id": "hs_linear_brackets_10",
+    "topic": "linear_brackets",
+    "question": "12*(x - 10) = -72",
+    "expected": [
+      4.0
+    ]
+  },
+  {
+    "id": "hs_linear_both_sides_10",
+    "topic": "linear_both_sides",
+    "question": "13*x + 10 = 2*x + 54",
+    "expected": [
+      4.0
+    ]
+  },
+  {
+    "id": "hs_fractional_linear_10",
+    "topic": "fractional_linear",
+    "question": "(x + 10)/3 = (2*x - 10)/5 + 151/30",
+    "expected": [
+      4.5
+    ]
+  },
+  {
+    "id": "hs_quadratic_10",
+    "topic": "quadratic",
+    "question": "x^2 - x - 110 = 0",
+    "expected": [
+      -10.0,
+      11.0
+    ]
+  },
+  {
+    "id": "hs_repeated_root_10",
+    "topic": "repeated_root",
+    "question": "x^2 - 20*x + 100 = 0",
+    "expected": [
+      10.0
+    ]
+  },
+  {
+    "id": "hs_cubic_10",
+    "topic": "cubic",
+    "question": "x^3 - 10*x^2 - 100*x + 1000 = 0",
+    "expected": [
+      -10.0,
+      10.0
+    ]
+  }
+]
