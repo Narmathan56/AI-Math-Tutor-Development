@@ -1,650 +1,381 @@
-# AI Math Tutor — Development Errors & Fixes
+# AI Math Tutor
 
-This document records the major engineering problems encountered during the development of the AI Math Tutor, the root causes identified, and the fixes implemented.
+> **An AI-powered mathematics tutor designed to solve, verify, explain, and eventually visually teach mathematical problems — not simply generate an answer.**
 
----
+## Overview
 
-*Problem 1: Llama Server Crash — `string indices must be integers, not 'str'`*
+AI Math Tutor is an ongoing project focused on building a more reliable and educational mathematics tutoring system around large language models.
 
-*Error*
+The central idea is simple: **an LLM should not be trusted as the only source of mathematical truth.**
 
-The application repeatedly crashed with:
+A language model can produce fluent explanations while still making mathematical, structural, or formatting mistakes. This project therefore combines LLM-generated explanations with deterministic mathematical computation, structured-output handling, validation, and conversation context.
 
-```text
-string indices must be integers, not 'str'
-```
+The long-term goal is to create a tutor that can:
 
-*Symptoms*
-
-The system was expected to work with structured dictionary data, but somewhere in the pipeline the data was being treated as a string.
-
-I added debugging statements such as:
-
-```python
-print("pass")
-```
-
-to trace the execution flow.
-
-The debugging confirmed that the request successfully passed through the `prompt_router`, but the server still crashed when reaching the Llama generation stage.
-
-*Investigation*
-
-Several areas were checked:
-
-* `build_prompt()`
-* `prompt_router`
-* Verified answer handling
-* `call_llama()`
-* Route selection
-* Data type conversions
-
-Initially, I suspected that the verified answer was being passed in the wrong format, so I added stronger type handling and guards around the prompt-building process.
-
-*Root Cause*
-
-The actual problem was in the way `call_llama()` was being called.
-
-The code was effectively passing:
-
-```python
-call_llama(route[prompt])
-```
-
-However, `route` had already been selected by the prompt router.
-
-The additional indexing caused the wrong data type to be passed into the Llama function.
-
-*Fix*
-
-The call was changed so that the selected route/prompt was passed directly to the Llama function instead of indexing it again.
-
-*Lesson*
-
-This error demonstrated the importance of tracking data types and data flow between pipeline components.
-
-A dictionary being converted or accessed as a string can produce errors that appear far away from the original mistake.
+1. Understand a student's mathematical question.
+2. Compute an independent ground-truth answer where possible.
+3. Generate a clear step-by-step explanation.
+4. Validate the generated result and mathematical transitions.
+5. Remember the previous problem so students can ask follow-up questions.
+6. Send normalized mathematical steps to the frontend.
+7. Visually teach those validated steps through an interactive whiteboard.
 
 ---
 
-*Problem 2: LLM Skipping the Required Step-Generation Schema*
+## Why I Built This
 
-*Problem*
+Many AI systems can answer mathematics questions, but a correct final answer alone does not make a good tutor.
 
-The AI Math Tutor successfully calculated the correct mathematical answer, but the LLM did not generate the structured solution steps required by the application.
-
-*Example Question*
-
-```text
-x⁴ − 10x² + 9 = 0
-```
-
-*Ground Truth*
-
-```python
-{
-    "type": "equation",
-    "answer": [-3.0, -1.0, 1.0, 3.0]
-}
-```
-
-*Initial LLM Output*
-
-The model returned:
-
-```json
-{
-    "result": {
-        "solution": "[-3.0, -1.0, 1.0, 3.0]",
-        "answer_status": "correct"
-    }
-}
-```
-
-The mathematical answer was correct, but this output was not sufficient for the tutor.
-
-The application requires:
-
-* Step-by-step reasoning
-* Mathematical expressions
-* Structured output
-* Final answer
-* A predictable schema for the frontend and validation system
-
-*Root Cause*
-
-The architecture allowed the LLM to focus on producing the final answer instead of enforcing the required response schema.
-
-The model could therefore return an answer and `answer_status` without generating the educational steps.
-
-*Fix*
-
-The output architecture was changed to explicitly require structured steps.
-
-The new expected structure became:
-
-```json
-{
-    "steps": [
-        {
-            "text": "...",
-            "expression": "..."
-        }
-    ],
-    "final_answer": [...]
-}
-```
-
-*Result*
-
-After changing the architecture, the model successfully generated structured mathematical steps:
-
-```json
-{
-    "steps": [
-        {
-            "text": "Factor equation",
-            "expression": "(x^2-1)(x^2-9)=0"
-        },
-        {
-            "text": "Solve factors",
-            "expression": "x=±1, ±3"
-        }
-    ],
-    "final_answer": [-3.0, -1.0, 1.0, 3.0]
-}
-```
-
-The system was now producing the required structure.
-
-*Remaining Issue*
-
-Although the schema worked, the generated explanation contained too few steps to provide a high-quality educational experience.
-
-This became the next architectural challenge: generating sufficiently detailed but mathematically valid steps.
-
----
-
-*Problem 3: Insufficient Step Generation*
-
-*Problem*
-
-After enforcing the schema, the model successfully generated steps, but the explanation was not detailed enough.
-
-For example, the system could reduce:
-
-```text
-x⁴ − 10x² + 9 = 0
-```
-
-to:
-
-```text
-(x²−1)(x²−9)=0
-```
-
-and then immediately to:
+For example, returning:
 
 ```text
 x = ±1, ±3
 ```
 
-This is mathematically useful, but not enough for an AI tutor designed to teach students.
+may be correct, but a student needs to understand **why** those values are the solutions.
 
-*Requirement*
-
-The tutor should explain the transformation progressively.
-
-For example:
-
-* Identify the polynomial structure.
-* Substitute or factor appropriately.
-* Factor the resulting expression.
-* Substitute back if necessary.
-* Apply the zero-product rule.
-* Solve each factor.
-* Validate the final solutions.
-
-*Status*
-
-This identified a major future improvement area:
-
-**Step generation must be both mathematically correct and pedagogically useful.**
-
-The system therefore needs to balance:
+The engineering challenge is therefore not just:
 
 ```text
-Correctness
-+
-Completeness
-+
-Educational Clarity
+Question → LLM → Answer
 ```
 
-rather than simply generating the shortest valid solution.
-
----
-
-*Problem 4: Malformed JSON Generated by the LLM*
-
-*Problem*
-
-The frontend and validation pipeline could not process some LLM responses because the generated JSON was malformed.
-
-The parser produced:
+Instead, I am building toward:
 
 ```text
-JSON PARSE FAILED:
-Expecting ',' delimiter:
-line 30 column 2 (char 673)
-```
-
-The debugging output showed:
-
-```text
-DEBUG json_data type: <class 'NoneType'>
-DEBUG json_data value: None
-STEP VALIDATION: []
-```
-
-*Impact*
-
-Because JSON parsing failed:
-
-* `json_data` became `None`
-* Step validation could not run
-* The frontend could not reliably receive the solution
-* The whiteboard could not render the mathematical steps
-
-*Root Cause*
-
-The LLM was generating text that looked like JSON but was not guaranteed to be valid JSON.
-
-LLMs are probabilistic generators and cannot be treated as guaranteed JSON serializers without additional validation.
-
-*Fix*
-
-The `extract_json()` function was enhanced with debugging and automatic repair logic.
-
-The repair process attempts to:
-
-1. Detect the JSON portion of the LLM output.
-2. Inspect malformed output.
-3. Repair missing structural characters where possible.
-4. Parse the repaired JSON.
-5. Return structured data to the validation pipeline.
-
-*Lesson*
-
-LLM output must be treated as **untrusted structured data**.
-
-The production pipeline therefore requires:
-
-```text
-LLM
- ↓
-JSON Extraction
- ↓
-JSON Repair
- ↓
-Schema Validation
- ↓
-Mathematical Validation
- ↓
-Frontend
-```
-
-rather than sending raw LLM output directly to the UI.
-
----
-
-*Problem 5: Frontend Output / Whiteboard Not Rendering*
-
-*Problem*
-
-At one stage, the backend successfully generated mathematical output, but the frontend output window and whiteboard were not displaying the result correctly.
-
-The raw LLM response contained formatting such as:
-
-* LaTeX
-* Curly braces
-* JSON syntax
-* Incomplete step structures
-
-Instead of receiving clean structured data, the frontend was receiving raw model output.
-
-*Impact*
-
-The application could calculate an answer internally but could not reliably display:
-
-* Solution steps
-* Mathematical expressions
-* Final answers
-* Whiteboard content
-
-*Root Cause*
-
-The backend-to-frontend contract was not sufficiently normalized.
-
-The frontend expected structured mathematical data, while the LLM sometimes returned raw text or malformed JSON.
-
-*Fix*
-
-The backend pipeline was redesigned to normalize the LLM output before sending it to the frontend.
-
-The intended flow became:
-
-```text
-User Question
-      ↓
+Question
+   ↓
+Input Processing
+   ↓
 Problem Classification
-      ↓
-Prompt Router
-      ↓
-LLM
-      ↓
-JSON Extraction
-      ↓
-JSON Repair
-      ↓
+   ↓
+Deterministic Ground Truth
+   ↓
+Prompt Routing
+   ↓
+LLM Step Generation
+   ↓
+Structured Output Parsing
+   ↓
 Schema Validation
-      ↓
+   ↓
 Mathematical Validation
-      ↓
-Normalized Response
-      ↓
-Frontend / Whiteboard
+   ↓
+Conversation Memory
+   ↓
+Normalized API Response
+   ↓
+Frontend
+   ↓
+Interactive Whiteboard
 ```
 
-This separates LLM generation from frontend rendering.
+The product is being designed around four principles:
+
+**Correctness + Explainability + Reliability + Visual Learning**
 
 ---
 
-*Problem 6: `normalize_input()` Removing Important Spaces*
+## Core Architecture
 
-*Problem*
+### 1. Mathematical Input Processing
 
-A separate issue was discovered in mathematical input normalization.
+User input is cleaned and normalized before mathematical processing.
 
-The function contained:
+The preprocessing layer distinguishes between natural-language phrases and mathematical expressions so that transformations do not accidentally corrupt the original question.
 
-```python
-expr = re.sub(r"\s+", "", expr)
-```
+### 2. Problem Classification & Prompt Routing
 
-This removes whitespace from the entire expression.
+Questions are classified so the system can choose an appropriate solving/explanation strategy instead of sending every problem through one generic prompt.
 
-At first this appeared useful for mathematical expressions because spaces are often irrelevant in expressions.
+The routing architecture is intended to support different mathematical categories such as equations, arithmetic, polynomial problems, calculus, logarithms, trigonometry, and conceptual follow-up questions.
 
-However, the same normalization logic was being applied to natural-language input.
+### 3. Deterministic Ground Truth
 
-*Example*
+Where possible, the system calculates an independent mathematical result using deterministic tools such as **SymPy**.
 
-The user entered:
+This gives the application a reference answer that is independent of the LLM.
 
 ```text
-what is 2+2
+Student Question
+      ↓
+Deterministic Solver
+      ↓
+Ground Truth
 ```
 
-The normalization pipeline also contained:
+The LLM is then used primarily for explanation and tutoring rather than being blindly trusted for correctness.
 
-```python
-expr = re.sub(r"([a-zA-Z])(\d+)", r"\1^\2", expr)
+### 4. Structured LLM Step Generation
+
+The model is instructed to return predictable structured data containing mathematical steps and a final answer.
+
+Example:
+
+```json
+{
+  "steps": [
+    {
+      "text": "Factor the equation",
+      "expression": "(x^2-1)(x^2-9)=0"
+    },
+    {
+      "text": "Solve each factor",
+      "expression": "x=±1, ±3"
+    }
+  ],
+  "final_answer": [-3, -1, 1, 3]
+}
 ```
 
-and:
+Structured steps are important because the output is consumed by validation logic and will ultimately drive the visual whiteboard.
 
-```python
-expr = expr.replace("what is", "")
-```
+### 5. JSON Extraction & Recovery
 
-Combined with aggressive whitespace removal, these transformations could interfere with the intended parsing.
+LLMs do not always produce perfectly valid structured output.
 
-*Root Cause*
-
-Natural-language preprocessing and mathematical-expression preprocessing were being mixed together.
-
-The system was treating:
-
-```text
-what is 2+2
-```
-
-too similarly to mathematical expressions.
-
-*Fix*
-
-The order of normalization operations was changed.
-
-Instead of immediately removing all whitespace, the input should first be cleaned of natural-language phrases such as:
-
-```text
-what is
-```
-
-and then mathematical transformations should be applied.
-
-The aggressive whitespace removal should occur later, after the relevant mathematical expression has been extracted.
-
-*Lesson*
-
-The parser needs to distinguish between:
-
-```text
-Natural Language
-```
-
-and:
-
-```text
-Mathematical Expression
-```
-
-before applying mathematical normalization rules.
-
----
-
-*Overall Engineering Lessons*
-
-*1. Never Trust Raw LLM Output*
-
-The LLM should be treated as a generator, not as a guaranteed structured-data system.
-
-Therefore:
+The pipeline therefore treats model output as **untrusted data**.
 
 ```text
 LLM Output
-→ Extraction
-→ Repair
-→ Schema Validation
-→ Mathematical Validation
+    ↓
+JSON Extraction
+    ↓
+Repair / Recovery
+    ↓
+Schema Validation
+    ↓
+Mathematical Validation
 ```
 
-is required.
+This prevents malformed model responses from being passed directly into downstream components.
 
-*2. Separate Responsibilities*
+### 6. Mathematical Validation
 
-Each component should have a clearly defined responsibility.
+Generated answers are compared against independently computed results where possible.
+
+The validation work includes mechanisms such as:
+
+- ground-truth comparison
+- answer normalization
+- substitution-based verification
+- algebraic transition validation
+- structured step validation
+
+The aim is to separate **generation** from **verification**.
+
+```text
+LLM → Candidate Explanation
+              ↓
+      Mathematical Validator
+              ↓
+       Verified Response
+```
+
+### 7. Conversation Memory
+
+The tutor supports contextual follow-up questions.
 
 For example:
 
 ```text
-Problem Type Detector
-        ↓
-Prompt Router
-        ↓
-LLM
-        ↓
-Output Parser
-        ↓
-Schema Validator
-        ↓
-Math Validator
-        ↓
-Step Validator
-        ↓
-Frontend
+Student: What is 2 + 2?
+Tutor: 4
+
+Student: Why 4?
 ```
 
-This makes debugging significantly easier.
+The second question cannot be understood properly in isolation.
 
-*3. Mathematical Correctness Should Not Depend Entirely on the LLM*
+The system therefore stores validated information such as:
 
-The LLM can generate explanations and candidate solutions.
+```python
+{
+    "previous_question": "...",
+    "previous_answer": "...",
+    "previous_steps": [...]
+}
+```
 
-Mathematical correctness should be independently checked where possible.
+Memory is updated **after validation**, helping prevent an incorrect generated answer from becoming trusted context for the next interaction.
 
-For example:
+### 8. Streaming API
+
+The backend includes a streaming solution flow so explanation content can be delivered progressively rather than forcing the user to wait for the entire generation process.
+
+A key design requirement is that memory and validation operate on the completed response rather than incomplete streaming chunks.
+
+### 9. Frontend & Mathematical Rendering
+
+The frontend consumes normalized backend data rather than raw LLM text.
+
+Mathematical expressions can be rendered using LaTeX/KaTeX-compatible formatting.
+
+This creates a stable contract between:
 
 ```text
-LLM
- ↓
-Candidate Solution
- ↓
-SymPy / Mathematical Validator
- ↓
-Verified Result
+AI Generation → Validation → API → UI
 ```
 
-This is particularly important for an educational AI system.
+### 10. Interactive Whiteboard — In Development
 
-*4. Correct Answer ≠ Good Tutoring*
+The next major product layer is the visual teaching system.
 
-A system that produces:
+Instead of only displaying text steps, the goal is for the tutor to progressively illustrate validated mathematical transformations on a whiteboard.
+
+Conceptually:
+
+```text
+Validated Step 1
+      ↓
+Whiteboard Animation
+
+Validated Step 2
+      ↓
+Whiteboard Animation
+
+Validated Step 3
+      ↓
+Final Visual Solution
+```
+
+This is intended to move the product from an AI **answer generator** toward an AI **teaching experience**.
+
+---
+
+## Reliability Philosophy
+
+One of the biggest lessons from developing this project is:
+
+> **A confident LLM response is not the same as a verified mathematical response.**
+
+The architecture therefore avoids relying on a single model call.
+
+The current direction separates responsibilities across:
+
+- classification
+- deterministic solving
+- prompt routing
+- generation
+- parsing
+- schema validation
+- mathematical verification
+- memory
+- rendering
+
+This separation also makes individual failures easier to identify, test, and improve.
+
+---
+
+## Development Progress
+
+### Implemented / Working
+
+- [x] FastAPI-based math solving backend
+- [x] Streaming solution endpoint
+- [x] Mathematical input normalization
+- [x] Problem classification and prompt routing
+- [x] LLM-generated step-by-step explanations
+- [x] Structured step/final-answer schema
+- [x] SymPy-backed ground-truth computation
+- [x] Answer comparison and validation
+- [x] Substitution-based verification
+- [x] Mathematical transition/step validation work
+- [x] JSON extraction and malformed-output recovery
+- [x] Normalized backend-to-frontend response flow
+- [x] Conversation memory for contextual follow-up questions
+- [x] Validation-before-memory-update logic
+- [x] LaTeX/KaTeX mathematical rendering work
+- [x] Experimentation with multiple LLM APIs/models
+
+### Currently Improving
+
+- [ ] More detailed and pedagogically useful step generation
+- [ ] Stronger validation across different mathematical problem types
+- [ ] More robust structured-output recovery
+- [ ] Better LaTeX handling
+- [ ] Error handling and fallback strategies
+- [ ] Larger evaluation/test set
+- [ ] Measurement of both mathematical correctness and explanation quality
+
+### Next Major Milestone
+
+- [ ] Connect validated solution steps to the interactive whiteboard
+- [ ] Animate mathematical transformations progressively
+- [ ] Improve visual explanations for different problem categories
+- [ ] Build a complete end-to-end tutoring experience
+- [ ] Add a public product demo
+
+---
+
+## Example Goal
+
+For a problem such as:
+
+```text
+x⁴ - 10x² + 9 = 0
+```
+
+the goal is not merely to output:
 
 ```text
 x = ±1, ±3
 ```
 
-may be mathematically correct but still provide a poor learning experience.
-
-The AI Math Tutor therefore needs to optimize for:
-
-```text
-Correctness
-+
-Step Quality
-+
-Clarity
-+
-Validation
-```
-
-rather than simply:
-
-```text
-Correct Final Answer
-```
-
-*5. Debugging Revealed Architectural Weaknesses*
-
-Several of these bugs were not isolated coding mistakes.
-
-They exposed weaknesses in the overall architecture:
-
-* Loose data contracts
-* Insufficient schema enforcement
-* Raw LLM output entering downstream systems
-* Natural-language and mathematical parsing being mixed
-* Insufficient separation between generation and validation
-
-Fixing these problems therefore improved not only individual functions but the architecture of the entire tutor.
+The tutor should progressively explain the structure of the equation, show the factorisation, apply the zero-product rule, solve the resulting factors, validate the solutions, and eventually visualize those transformations on the whiteboard.
 
 ---
 
-*Current Development Direction*
+## Tech Stack
 
-The next major engineering priorities are:
+- **Python**
+- **FastAPI**
+- **SymPy**
+- **LLM APIs**
+- **Server-Sent Events / Streaming**
+- **JSON structured outputs**
+- **LaTeX / KaTeX**
+- **Frontend whiteboard / Canvas**
+- **Git & GitHub**
 
-* Improve step-generation quality.
-* Make JSON extraction and repair more robust.
-* Enforce the response schema consistently.
-* Validate every mathematical step where possible.
-* Normalize backend responses before sending them to the frontend.
-* Improve LaTeX handling.
-* Connect validated steps to the whiteboard renderer.
-* Add stronger error handling and fallback behaviour.
-* Test the complete pipeline with a large set of mathematical problems.
-* Measure both mathematical correctness and pedagogical quality.
+---
 
-The ultimate goal is to transform the system from an LLM that **answers mathematics questions** into an AI tutor that **generates, verifies, explains, and visually teaches mathematical solutions**.
+## Current Project Direction
 
-*problem*
+The project started as an experiment in AI-generated mathematics solutions.
 
-My AI math Tutor single memory system doesn't work
+It is evolving into a reliability-focused tutoring architecture where the LLM is only one component of the system.
 
-*Symtoms*
-When I ask "Why 4" after the Question "what is 2+2" it gives the answer from llm but not use the previouse text or question.
+The target is:
 
 ```text
-question = q.question.strip().lower()
-
-problem_type = classify(q.question.lower())
-
-clean_question = normalize_math_input(q.question)
-
-truth = cached_ground_truth(clean_question)
-```
-Here, if i ask the `why 4` after question `what is 2+2`
-i haven't given the oppurchunity  to llm to see the previous anwer. so llm generlly do the truth instead of see the previous
-
-
-*fix*
-add one more prompt with which've already exist.
-
-```text
-If the current question refers to the previous question or previous answer,
-use the previous memory to understand the context.
+Generate
+   +
+Verify
+   +
+Explain
+   +
+Remember
+   +
+Visualize
+   =
+AI Math Tutor
 ```
 
+The next major focus is the **interactive whiteboard explanation layer** and systematic evaluation of the complete tutoring pipeline.
 
+---
 
-  
-*problem*
+## Demo
 
-```text
-========== STREAM REQUEST ==========
-Question: what is 2+2
-Memory: {'previous_question': None, 'previous_answer': None, 'previous_steps': []}
-Problem type: concept
-Clean question: 2+2
-INFO:     127.0.0.1:53089 - "POST /solve_math_stream HTTP/1.1" 200 OK
-========== STREAM REQUEST ==========
-Question: why 4
-Memory: {'previous_question': None, 'previous_answer': None, 'previous_steps': []}
-Problem type: concept
-Clean question: why4
-SYMPY ERROR: Cannot convert expression to float
-INFO:     127.0.0.1:51806 - "POST /solve_math_stream HTTP/1.1" 200 OK
+> **Demo coming soon.**
 
-```
-in first Streaming request has `Memory: {'previous_question': None, 'previous_answer': None, 'previous_steps': []}` 
-this is okay beacuse there's no previouse memory. 
-second  Streaming request also has `Memory: {'previous_question': None, 'previous_answer': None, 'previous_steps': []}`
-This is the problem when i ask `why 4` it should've explained about how 4 comes. but here no previous memory
+A product demonstration will be added here once the next end-to-end version of the tutor and whiteboard experience is ready.
 
-*Reason*
-I Forget to add the code for `Save memory` ending of the Streaming end-point. 
-when i `save memory` it will use to next question. so this is important to add.
+---
 
-*fix*
+## Status
 
-Added This code after Validate the answer because if i do before the Validate especially in Streaming, it will not good idea. when streaming llm gives the answer as token. token becoms chunks after it will become full. if i insert the save memory into that chunk will store on memory. not full answer at the same time i should've add this betweeen streaming point and call validate_answer function. if i store the answer without validation, sometimes llm gives the incorrect answer then this store the incorrect answer and recollect the incorrect answer . so i put this after validation
+🚧 **Active Development**
 
-```text
-if validation_result["valid"]:
-
-            memory_manager.update_memory(
-                question=q.question,
-                answer=parsed_output.get("final_answer"),
-                steps=parsed_output.get("steps", [])
-            )
-
-            print("MEMORY UPDATED:")
-            print(memory_manager.get_memory())
-
-        else:
-
-            print("MEMORY NOT UPDATED BECAUSE VALIDATION FAILED")
-```
-
+This repository documents the ongoing development version of AI Math Tutor. The architecture and implementation will continue to evolve as validation, explanation quality, evaluation, and visual teaching capabilities improve.
