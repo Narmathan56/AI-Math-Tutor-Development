@@ -368,7 +368,11 @@ The next major focus is the **interactive whiteboard explanation layer** and sys
 
 ## Demo
 
-> **Demo coming soon.**
+> 
+
+https://github.com/user-attachments/assets/cdd30b74-c9b4-487a-be60-186c9e4cba64
+
+
 
 A product demonstration will be added here once the next end-to-end version of the tutor and whiteboard experience is ready.
 
