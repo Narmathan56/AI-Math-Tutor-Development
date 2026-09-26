@@ -1,0 +1,5 @@
+{
+  "id": "arithmetic_01",
+  "question": "2 + 2",
+  "raw_response": "{\n    \"steps\": [\n        {\n            \"text\": \"Add 2 and 2 together: 2 + 2 = 4.\"\n        }\n    ],\n    \"final_answer\": [4]\n}"
+}

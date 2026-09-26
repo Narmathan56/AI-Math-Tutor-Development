@@ -1,0 +1,9 @@
+{
+  "total_scored": 8,
+  "raw_accuracy": 1.0,
+  "validation_accepted": 8,
+  "correct_accepted": 8,
+  "correct_rejected": 0,
+  "incorrect_accepted": 0,
+  "incorrect_rejected": 0
+}

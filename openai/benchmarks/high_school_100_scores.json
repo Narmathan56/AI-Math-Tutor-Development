@@ -1,0 +1,1242 @@
+[
+  {
+    "id": "hs_order_of_operations_01",
+    "expected": [
+      11.0
+    ],
+    "model_answer": [
+      11
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_01",
+    "expected": [
+      0.875
+    ],
+    "model_answer": [
+      0.875
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_01",
+    "expected": [
+      0.0
+    ],
+    "model_answer": [
+      0
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_01",
+    "expected": [
+      -5.0
+    ],
+    "model_answer": [
+      -5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_01",
+    "expected": [
+      -5.0
+    ],
+    "model_answer": [
+      -5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_01",
+    "expected": [
+      -5.0
+    ],
+    "model_answer": [
+      -5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_01",
+    "expected": [
+      -4.5
+    ],
+    "model_answer": [
+      -4.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_01",
+    "expected": [
+      -1.0,
+      2.0
+    ],
+    "model_answer": [
+      -1,
+      2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_01",
+    "expected": [
+      1.0
+    ],
+    "model_answer": [
+      1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_01",
+    "expected": [
+      -1.0,
+      1.0
+    ],
+    "model_answer": [
+      -1,
+      1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_02",
+    "expected": [
+      10.0
+    ],
+    "model_answer": [
+      10
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_02",
+    "expected": [
+      1.5
+    ],
+    "model_answer": [
+      1.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_02",
+    "expected": [
+      1.0
+    ],
+    "model_answer": [
+      1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_02",
+    "expected": [
+      -4.0
+    ],
+    "model_answer": [
+      -4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_02",
+    "expected": [
+      -4.0
+    ],
+    "model_answer": [
+      -4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_02",
+    "expected": [
+      -4.0
+    ],
+    "model_answer": [
+      -4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_02",
+    "expected": [
+      -3.5
+    ],
+    "model_answer": [
+      -3.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_02",
+    "expected": [
+      -2.0,
+      3.0
+    ],
+    "model_answer": [
+      -2,
+      3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_02",
+    "expected": [
+      2.0
+    ],
+    "model_answer": [
+      2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_02",
+    "expected": [
+      -2.0,
+      2.0
+    ],
+    "model_answer": [
+      -2,
+      2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_03",
+    "expected": [
+      9.0
+    ],
+    "model_answer": [
+      9
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_03",
+    "expected": [
+      2.125
+    ],
+    "model_answer": [
+      2.125
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_03",
+    "expected": [
+      2.0
+    ],
+    "model_answer": [
+      2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_03",
+    "expected": [
+      -3.0
+    ],
+    "model_answer": [
+      -3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_03",
+    "expected": [
+      -3.0
+    ],
+    "model_answer": [
+      -3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_03",
+    "expected": [
+      -3.0
+    ],
+    "model_answer": [
+      -3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_03",
+    "expected": [
+      -2.5
+    ],
+    "model_answer": [
+      -2.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_03",
+    "expected": [
+      -3.0,
+      4.0
+    ],
+    "model_answer": [
+      -3,
+      4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_03",
+    "expected": [
+      3.0
+    ],
+    "model_answer": [
+      3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_03",
+    "expected": [
+      -3.0,
+      3.0
+    ],
+    "model_answer": [
+      -3,
+      3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_04",
+    "expected": [
+      8.0
+    ],
+    "model_answer": [
+      8
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_04",
+    "expected": [
+      2.75
+    ],
+    "model_answer": [
+      2.75
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_04",
+    "expected": [
+      1.0
+    ],
+    "model_answer": [
+      1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_04",
+    "expected": [
+      -2.0
+    ],
+    "model_answer": [
+      -2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_04",
+    "expected": [
+      -2.0
+    ],
+    "model_answer": [
+      -2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_04",
+    "expected": [
+      -2.0
+    ],
+    "model_answer": [
+      -2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_04",
+    "expected": [
+      -1.5
+    ],
+    "model_answer": [
+      -1.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_04",
+    "expected": [
+      -4.0,
+      5.0
+    ],
+    "model_answer": [
+      5,
+      -4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_04",
+    "expected": [
+      4.0
+    ],
+    "model_answer": [
+      4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_04",
+    "expected": [
+      -4.0,
+      4.0
+    ],
+    "model_answer": [
+      -4,
+      4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_05",
+    "expected": [
+      7.0
+    ],
+    "model_answer": [
+      7
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_05",
+    "expected": [
+      3.375
+    ],
+    "model_answer": [
+      3.375
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_05",
+    "expected": [
+      -6.0
+    ],
+    "model_answer": [
+      -6
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_05",
+    "expected": [
+      -1.0
+    ],
+    "model_answer": [
+      -1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_05",
+    "expected": [
+      -1.0
+    ],
+    "model_answer": [
+      -1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_05",
+    "expected": [
+      -1.0
+    ],
+    "model_answer": [
+      -1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_05",
+    "expected": [
+      -0.5
+    ],
+    "model_answer": [
+      -0.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_05",
+    "expected": [
+      -5.0,
+      6.0
+    ],
+    "model_answer": [
+      6,
+      -5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_05",
+    "expected": [
+      5.0
+    ],
+    "model_answer": [
+      5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_05",
+    "expected": [
+      -5.0,
+      5.0
+    ],
+    "model_answer": [
+      -5,
+      5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_06",
+    "expected": [
+      6.0
+    ],
+    "model_answer": [
+      6
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_06",
+    "expected": [
+      4.0
+    ],
+    "model_answer": [
+      4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_06",
+    "expected": [
+      -27.0
+    ],
+    "model_answer": [
+      -27
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_06",
+    "expected": [
+      0.0
+    ],
+    "model_answer": [
+      0
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_06",
+    "expected": [
+      0.0
+    ],
+    "model_answer": [
+      0
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_06",
+    "expected": [
+      0.0
+    ],
+    "model_answer": [
+      0
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_06",
+    "expected": [
+      0.5
+    ],
+    "model_answer": [
+      0.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_06",
+    "expected": [
+      -6.0,
+      7.0
+    ],
+    "model_answer": [
+      7,
+      -6
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_06",
+    "expected": [
+      6.0
+    ],
+    "model_answer": [
+      6
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_06",
+    "expected": [
+      -6.0,
+      6.0
+    ],
+    "model_answer": [
+      -6,
+      6
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_07",
+    "expected": [
+      5.0
+    ],
+    "model_answer": [
+      5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_07",
+    "expected": [
+      4.625
+    ],
+    "model_answer": [
+      4.625
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_07",
+    "expected": [
+      -78.0
+    ],
+    "model_answer": [
+      -78
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_07",
+    "expected": [
+      1.0
+    ],
+    "model_answer": [
+      1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_07",
+    "expected": [
+      1.0
+    ],
+    "model_answer": [
+      1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_07",
+    "expected": [
+      1.0
+    ],
+    "model_answer": [
+      1
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_07",
+    "expected": [
+      1.5
+    ],
+    "model_answer": [
+      1.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_07",
+    "expected": [
+      -7.0,
+      8.0
+    ],
+    "model_answer": [
+      -7,
+      8
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_07",
+    "expected": [
+      7.0
+    ],
+    "model_answer": [
+      7
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_07",
+    "expected": [
+      -7.0,
+      7.0
+    ],
+    "model_answer": [
+      -7,
+      7
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_08",
+    "expected": [
+      4.0
+    ],
+    "model_answer": [
+      4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_08",
+    "expected": [
+      5.25
+    ],
+    "model_answer": [
+      5.25
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_08",
+    "expected": [
+      -191.0
+    ],
+    "model_answer": [
+      -191
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_08",
+    "expected": [
+      2.0
+    ],
+    "model_answer": [
+      2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_08",
+    "expected": [
+      2.0
+    ],
+    "model_answer": [
+      2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_08",
+    "expected": [
+      2.0
+    ],
+    "model_answer": [
+      2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_08",
+    "expected": [
+      2.5
+    ],
+    "model_answer": [
+      2.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_08",
+    "expected": [
+      -8.0,
+      9.0
+    ],
+    "model_answer": [
+      9,
+      -8
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_08",
+    "expected": [
+      8.0
+    ],
+    "model_answer": [
+      8
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_08",
+    "expected": [
+      -8.0,
+      8.0
+    ],
+    "model_answer": [
+      -8,
+      8
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_09",
+    "expected": [
+      3.0
+    ],
+    "model_answer": [
+      3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_09",
+    "expected": [
+      5.875
+    ],
+    "model_answer": [
+      5.875
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_09",
+    "expected": [
+      -430.0
+    ],
+    "model_answer": [
+      -430
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_09",
+    "expected": [
+      3.0
+    ],
+    "model_answer": [
+      3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_09",
+    "expected": [
+      3.0
+    ],
+    "model_answer": [
+      3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_09",
+    "expected": [
+      3.0
+    ],
+    "model_answer": [
+      3
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_09",
+    "expected": [
+      3.5
+    ],
+    "model_answer": [
+      3.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_09",
+    "expected": [
+      -9.0,
+      10.0
+    ],
+    "model_answer": [
+      -9,
+      10
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_09",
+    "expected": [
+      9.0
+    ],
+    "model_answer": [
+      9
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_09",
+    "expected": [
+      -9.0,
+      9.0
+    ],
+    "model_answer": [
+      -9,
+      9
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_order_of_operations_10",
+    "expected": [
+      2.0
+    ],
+    "model_answer": [
+      2
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractions_10",
+    "expected": [
+      6.5
+    ],
+    "model_answer": [
+      6.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_powers_10",
+    "expected": [
+      -923.0
+    ],
+    "model_answer": [
+      -923
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_10",
+    "expected": [
+      4.0
+    ],
+    "model_answer": [
+      4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_brackets_10",
+    "expected": [
+      4.0
+    ],
+    "model_answer": [
+      4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_linear_both_sides_10",
+    "expected": [
+      4.0
+    ],
+    "model_answer": [
+      4
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_fractional_linear_10",
+    "expected": [
+      4.5
+    ],
+    "model_answer": [
+      4.5
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_quadratic_10",
+    "expected": [
+      -10.0,
+      11.0
+    ],
+    "model_answer": [
+      11,
+      -10
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_repeated_root_10",
+    "expected": [
+      10.0
+    ],
+    "model_answer": [
+      10
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  },
+  {
+    "id": "hs_cubic_10",
+    "expected": [
+      -10.0,
+      10.0
+    ],
+    "model_answer": [
+      -10,
+      10
+    ],
+    "outcome": "correct_accepted",
+    "parse_error": null,
+    "validation_reason": "ok"
+  }
+]
