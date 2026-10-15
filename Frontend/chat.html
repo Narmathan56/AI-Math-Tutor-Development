@@ -54,4 +54,18 @@
     </div>
 </div>
 
+<div id="cameraPanel">
+    <video id="cameraPreview" autoplay playsinline muted></video>
+    <canvas id="cameraSnapshot" hidden></canvas>
+
+
+    <div>
+        <button id ="captureStepButton" onclick="captureStep()">Capture Step</button>
+        <button id="startCameraButton" onclick="startCamera()">Start camera</button>
+        <button id="stopCameraButton" onclick="stopCamera()" disabled>Stop camera</button>
+    </div>
+
+    <p id="cameraStatus" aria-live="polite">Camera off</p>
+</div>
+
 </body>

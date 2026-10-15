@@ -251,3 +251,26 @@ button:hover {
     
 
 }
+
+#cameraPanel {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    width: min(280px, calc(100vw - 32px));
+    padding: 12px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px #0002;
+    z-index: 1000;
+}
+
+#cameraPreview {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: contain;
+    background: #111;
+    margin-bottom: 8px;
+}
+

@@ -31,6 +31,90 @@ let stepContextRequest = null;
 // streaming buffer
 let liveText = "";
 
+// Keep the stream so Stop can release the camera, not just hide the video.
+let cameraStream = null;
+let cameraRequestVersion = 0;
+let cameraStarting = false;
+
+async function startCamera() {
+    if (cameraStarting || cameraStream) return;
+
+    const video = document.getElementById("cameraPreview");
+    const status = document.getElementById("cameraStatus");
+    const startButton = document.getElementById("startCameraButton");
+    const stopButton = document.getElementById("stopCameraButton");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+        status.textContent = "Camera unavailable. Open this page on localhost or HTTPS in a supported browser.";
+        return;
+    }
+function captureStep(){
+    const video = document.getElementById("cameraPreview")
+    const snapshot = document.getElementById("cameraSnapshot")
+}   
+
+    const requestVersion = ++cameraRequestVersion;
+    cameraStarting = true;
+    startButton.disabled = true;
+    stopButton.disabled = false;
+    status.textContent = "Requesting camera permission...";
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+        });
+
+        // Stop may be clicked while the permission prompt is still open.
+        if (requestVersion !== cameraRequestVersion) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+
+        cameraStream = stream;
+        video.srcObject = stream;
+        stream.getVideoTracks().forEach(track => {
+            track.addEventListener("ended", () => {
+                if (cameraStream !== stream) return;
+                stopCamera();
+                status.textContent = "Camera disconnected or access ended. Try starting again.";
+            });
+        });
+        await video.play();
+        if (requestVersion === cameraRequestVersion) {
+            status.textContent = "Camera on";
+        }
+    } catch (error) {
+        if (requestVersion !== cameraRequestVersion) return;
+        stopCamera();
+        const messages = {
+            NotAllowedError: "Camera access denied. Allow camera access in your browser's site settings and try again.",
+            NotFoundError: "No camera found. Connect a camera and try again.",
+            NotReadableError: "Could not read the camera. Close other apps using it and try again."
+        };
+        status.textContent = messages[error.name] || "Could not start the camera. Please try again.";
+        console.error("Could not start camera:", error);
+    } finally {
+        if (requestVersion === cameraRequestVersion) cameraStarting = false;
+    }
+}
+
+function stopCamera() {
+    cameraRequestVersion++;
+    cameraStarting = false;
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    document.getElementById("cameraPreview").srcObject = null;
+    document.getElementById("startCameraButton").disabled = false;
+    document.getElementById("stopCameraButton").disabled = true;
+    document.getElementById("cameraStatus").textContent = "Camera off";
+}
+
+window.addEventListener("pagehide", stopCamera);
+
+
 // =========================
 // INIT CANVAS
 // =========================
